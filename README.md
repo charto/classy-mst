@@ -7,7 +7,7 @@ This package provides an alternative syntax for [mobx-state-tree](https://github
 (MST) based on ES6 classes. It preserves types, meaning DRY code with runtime
 type information, statically typed in the compiler when using TypeScript.
 
-Inheritance and `super` works as you would expect. The major differences
+Inheritance and `super` work as you would expect. The major differences
 compared to ordinary ES6 classes are:
 
 - `this instanceof Class` is false inside `Class`, because `this` refers to a MobX state tree node.
@@ -66,8 +66,8 @@ const SpecialTodo = mst(SpecialTodoCode, SpecialTodoData);
 ```
 
 If adding new properties to the superclass, it's important to pass the
-unmodified superclass as the second parameter to `shim`, to get prototype so
-that `super` points to a superclass definition with appropriate ES6 methods.
+unmodified superclass as the second parameter to `shim`, to get its prototype
+so that `super` points to a superclass definition with appropriate ES6 methods.
 
 ES6 methods become views (assumed to have no side-effects) unless decorated
 with `@action`, which turns them into actions.
