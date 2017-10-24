@@ -1,0 +1,41 @@
+{
+  "name": "classy-mst",
+  "version": "0.1.0",
+  "description": "ES6-like syntax for mobx-state-tree",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "tsc": "tsc",
+    "prepublish": "tsc -p src",
+    "test": "tsc -p test && node test/test.js"
+  },
+  "author": "Juha Järvi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/charto/classy-mst.git"
+  },
+  "bugs": {
+    "url": "https://github.com/charto/classy-mst/issues"
+  },
+  "homepage": "https://github.com/charto/classy-mst#readme",
+  "keywords": [
+    "mobx",
+    "mst",
+    "react",
+    "reactive",
+    "redux",
+    "state"
+  ],
+  "peerDependencies": {
+    "mobx": "^3.1.15"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.29",
+    "mobx": "^3.3.1",
+    "typescript": "^2.5.3"
+  },
+  "dependencies": {
+    "mobx-state-tree": "^1.0.1"
+  }
+}
