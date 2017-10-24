@@ -1,3 +1,6 @@
+// This file is part of classy-mst, copyright (c) 2017 BusFaster Ltd.
+// Released under the MIT license, see LICENSE.
+
 import { IModelType } from 'mobx-state-tree';
 
 /** Fake complete, generic implementation of IModelType. */
