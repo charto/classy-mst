@@ -32,8 +32,9 @@ const SpecialTodoData = shim(
 class SpecialTodoCode extends SpecialTodoData {
 
 	@action
-	toggle() {
-		console.log('Toggled ' + this.title + ' ' + (++this.count) + ' times!');
+	toggle(increment = 1) {
+		this.count += increment;
+		console.log('Toggled ' + this.title + ' ' + this.count + ' times!');
 		super.toggle();
 	}
 
@@ -58,7 +59,7 @@ onSnapshot(store, (snapshot) => {
 
 store.todos[0].toggle();
 store.todos[1].toggle();
-store.todos[1].toggle();
+store.todos[1].toggle(99);
 
 store.todos[0].print();
 store.todos[1].print();
