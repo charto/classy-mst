@@ -18,7 +18,7 @@ Here's how it looks:
 
 ```TypeScript
 import { types } from 'mobx-state-tree';
-import { mst, shim, action } from './classy-mst';
+import { mst, shim, action } from 'classy-mst';
 
 const TodoData = shim(types.model({
 	title: types.string,
@@ -87,6 +87,40 @@ git clone https://github.com/charto/classy-mst.git
 cd classy-mst
 npm install
 npm test
+```
+
+Asynchronous actions
+--------------------
+
+Asynchronous actions return a promise. The actual method needs to define a
+generator, pass it to `process` or `flow` from `mobx-state-tree`, call the
+returned function and return its result, like this:
+
+```TypeScript
+import { types, process } from 'mobx-state-tree';
+import { mst, shim, action } from 'classy-mst';
+
+const AsyncData = shim(types.model({}));
+
+class AsyncCode extends AsyncData {
+
+        @action
+        run() {
+                function* generate() {
+                        yield Promise.resolve('This gets lost');
+                        return('Returned value');
+                }
+
+                return(process(generate)());
+        }
+
+}
+
+const Async = mst(AsyncCode, AsyncData);
+
+Async.create().run().then(
+        (result) => console.log(result)
+);
 ```
 
 License
