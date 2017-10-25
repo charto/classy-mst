@@ -45,9 +45,11 @@ export function mst<S, T, U>(code: new() => U, data: IModelType<S, T>): IModelTy
 		const result: { [name: string]: any } = {};
 
 		for(let name of Object.keys(defs)) {
-			if(name != 'constructor' && name != '$actions') {
-				const method = defs[name];
-				result[name] = function() { return(method.apply(self, arguments)); }
+			const method = defs[name];
+			if(method && name != 'constructor' && name != '$actions') {
+				result[name] = function() {
+					return(method.apply(self, arguments));
+				}
 			}
 		}
 
