@@ -16,7 +16,7 @@ export declare abstract class ModelClass<S, T> extends AbstractModel implements 
   * callable to construct a specialized instance. */
 
 export interface ModelInterface<S, T> extends IModelType<S, T> {
-	new(): ModelClass<S, T> & T
+	new(): ModelClass<S, T> & T;
 }
 
 /** Force TypeScript to accept an MST model as a superclass.

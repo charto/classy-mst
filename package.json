@@ -31,11 +31,11 @@
     "mobx": "^3.1.15"
   },
   "devDependencies": {
-    "@types/node": "^8.0.29",
+    "@types/node": "^8.0.47",
     "mobx": "^3.3.1",
-    "typescript": "^2.5.3"
+    "typescript": "^2.6.1"
   },
   "dependencies": {
-    "mobx-state-tree": "^1.0.1"
+    "mobx-state-tree": "^1.1.0"
   }
 }

@@ -1,4 +1,4 @@
-import { types, process, onSnapshot } from 'mobx-state-tree';
+import { types, flow, onSnapshot } from 'mobx-state-tree';
 import { mst, shim, action } from '..';
 
 const TodoData = shim(types.model({
@@ -75,7 +75,7 @@ class AsyncCode extends AsyncData {
 			return('Returned value');
 		}
 
-		return(process(generate)());
+		return(flow(generate)());
 	}
 
 }
