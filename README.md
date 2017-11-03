@@ -21,8 +21,10 @@ import { types } from 'mobx-state-tree';
 import { mst, shim, action } from 'classy-mst';
 
 const TodoData = shim(types.model({
+
 	title: types.string,
 	done: false
+
 }))
 
 class TodoCode extends TodoData {
@@ -51,12 +53,14 @@ types as follows:
 ```TypeScript
 // Inherit Todo and add new count property.
 const SpecialTodoData = shim(
+
 	Todo.props({
 		count: types.optional(types.number, 0)
 	}),
 	// Original MST type containing the wrapped methods,
 	// needed for binding references to "super".
 	Todo
+
 );
 
 class SpecialTodoCode extends SpecialTodoData {
@@ -121,6 +125,90 @@ const Async = mst(AsyncCode, AsyncData);
 Async.create().run().then(
         (result) => console.log(result)
 );
+```
+
+Recursive types
+---------------
+
+Fully typed recursive types require some tricky syntax to avoid these TypeScript compiler errors:
+
+- `error TS2456: Type alias 'Type' circularly references itself.`
+- `error TS2502: 'member' is referenced directly or indirectly in its own type annotation.`
+- `error TS2506: 'Type' is referenced directly or indirectly in its own base expression.`
+- `error TS7022: 'Type' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.`
+
+Luckily interface types are lazier so they support recursive references. One working trick is then:
+
+```TypeScript
+import { IObservableArray } from 'mobx';
+import { types, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
+import { mst, shim, action, ModelInterface } from 'classy-mst';
+
+export const NodeData = shim(types.model({
+
+	// Non-recursive members go here, for example:
+	id: ''
+
+}));
+
+export class NodeCode extends NodeData {
+
+	// Example method. Note how all members are available and fully typed,
+	// even if recursively defined.
+
+	getChildIDs() {
+		for(let child of this.children || []) {
+			if(child.children) child.getChildIDs();
+			if(child.id) console.log(child.id);
+		}
+	}
+
+	// Recursive members go here first.
+	children?: Node[];
+
+}
+
+export const NodeBase = mst(NodeCode, NodeData);
+export type NodeBase = typeof NodeBase.Type;
+
+// Interface trickery to avoid compiler errors when defining a recursive type.
+export interface NodeObservableArray extends IObservableArray<NodeRecursive> {}
+
+export interface NodeRecursive extends NodeBase {
+
+	// Recursive members go here second.
+	children: NodeObservableArray
+
+}
+
+export interface NodeArray extends IComplexType<
+	(typeof NodeBase.SnapshotType & {
+
+		// Recursive members go here third.
+		children: any[]
+
+	})[],
+	NodeObservableArray
+> {}
+
+export const Node = NodeBase.props({
+
+	// Recursive members go here fourth.
+	children: types.maybe(types.array(types.late((): any => Node)) as NodeArray),
+
+});
+
+export type Node = typeof Node.Type;
+
+const tree = Node.create({
+	children: [
+		{ children: [ { id: 'TEST' } ] }
+	]
+});
+
+// Both print: TEST
+console.log(tree.children![0].children![0].id);
+tree.getChildIDs();
 ```
 
 License
