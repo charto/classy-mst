@@ -137,7 +137,8 @@ Fully typed recursive types require some tricky syntax to avoid these TypeScript
 - `error TS2506: 'Type' is referenced directly or indirectly in its own base expression.`
 - `error TS7022: 'Type' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.`
 
-Luckily interface types are lazier so they support recursive references. One working trick is then:
+Luckily interface types are lazier so they support recursive references.
+First we can define the type with nice syntax, exactly as it should ideally work:
 
 ```TypeScript
 import { IObservableArray } from 'mobx';
@@ -167,7 +168,11 @@ export class NodeCode extends NodeData {
 	children?: Node[];
 
 }
+```
 
+Then we need unfortunate boilerplate to make the compiler happy:
+
+```TypeScript
 export const NodeBase = mst(NodeCode, NodeData);
 export type NodeBase = typeof NodeBase.Type;
 
@@ -181,7 +186,7 @@ export interface NodeRecursive extends NodeBase {
 
 }
 
-export interface NodeArray extends IComplexType<
+export type NodeArray = IComplexType<
 	(typeof NodeBase.SnapshotType & {
 
 		// Recursive members go here third.
@@ -189,7 +194,7 @@ export interface NodeArray extends IComplexType<
 
 	})[],
 	NodeObservableArray
-> {}
+>;
 
 export const Node = NodeBase.props({
 
@@ -199,7 +204,11 @@ export const Node = NodeBase.props({
 });
 
 export type Node = typeof Node.Type;
+```
 
+Finally, the new type can be used like this:
+
+```TypeScript
 const tree = Node.create({
 	children: [
 		{ children: [ { id: 'TEST' } ] }

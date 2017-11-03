@@ -124,7 +124,7 @@ export interface NodeRecursive extends NodeBase {
 
 }
 
-export interface NodeArray extends IComplexType<
+export type NodeArray = IComplexType<
 	(typeof NodeBase.SnapshotType & {
 
 		// Recursive members go here third.
@@ -132,7 +132,7 @@ export interface NodeArray extends IComplexType<
 
 	})[],
 	NodeObservableArray
-> {}
+>;
 
 export const Node = NodeBase.props({
 
