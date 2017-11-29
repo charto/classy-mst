@@ -6,7 +6,7 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "tsc": "tsc",
-    "prepublish": "tsc -p src",
+    "prepublish": "tsc -p src && tsc -p src/ts-amd.json && node src/fix-amd.js",
     "test": "tsc -p test && node test/test.js"
   },
   "author": "Juha Järvi",

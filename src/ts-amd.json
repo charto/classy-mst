@@ -1,13 +1,13 @@
 {
 	"compileOnSave": true,
 	"compilerOptions": {
-		"declaration": true,
+		"declaration": false,
 		"lib": [ "es5", "es2015.iterable" ],
-		"module": "commonjs",
+		"module": "amd",
 		"moduleResolution": "node",
 		"noImplicitAny": true,
 		"noImplicitThis": true,
-		"outDir": "../dist",
+		"outFile": "../dist/index-amd.js",
 		"removeComments": false,
 		"sourceMap": false,
 		"strictNullChecks": true,
@@ -15,6 +15,6 @@
 		"types": []
 	},
 	"files": [
-		"index.ts"
+		"../classy-mst.ts"
 	]
 }
