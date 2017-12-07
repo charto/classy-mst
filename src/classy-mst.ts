@@ -43,29 +43,35 @@ export function action(target: { [key: string]: any }, key: string) {
   *   and actions (if decorated).
   * @param data MST model with properties. */
 
-export function mst<S, T, U>(code: new() => U, data: IModelType<S, T>): IModelType<S, U> {
-	function bindMethods(self: any, defs: { [name: string]: any }) {
+export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>): IModelType<S, U> {
+	function bindMembers(self: any, methodFlag: boolean, defs: { [name: string]: any }) {
 		const result: { [name: string]: any } = {};
 
 		for(let name of Object.getOwnPropertyNames(defs)) {
-			const method = defs[name];
-			if(method && name != 'constructor' && name != '$actions') {
+			const member = defs[name];
+
+			if(name == 'constructor' || name == '$actions') continue;
+			if((typeof(member) == 'function') != methodFlag) continue;
+
+			if(methodFlag) {
 				result[name] = function() {
-					return(method.apply(self, arguments));
+					return(member.apply(self, arguments));
 				}
-			}
+			} else result[name] = member;
 		}
 
 		return(result);
 	}
 
-	const model = data.views(
-		(self) => bindMethods(self, code.prototype)
+	const Model = Data.views(
+		(self) => bindMembers(self, true, Code.prototype)
 	).actions(
-		(self) => bindMethods(self, code.prototype.$actions || [])
+		(self) => bindMembers(self, true, Code.prototype.$actions || [])
+	).volatile(
+		(self) => bindMembers(self, false, new Code())
 	) as any;
 
-	model.prototype = code.prototype;
+	Model.prototype = Code.prototype;
 
-	return(model);
+	return(Model);
 }

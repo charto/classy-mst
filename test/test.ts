@@ -62,6 +62,25 @@ store.todos[1].toggle(99);
 store.todos[0].print();
 store.todos[1].print();
 
+const VolatileData = types.model(
+	{}
+).volatile(
+	(self) => ({ a: 1 })
+);
+
+class VolatileCode extends shim(VolatileData) {
+
+	test() { return(this.a + this.b); }
+
+	b = 2;
+
+}
+
+const Volatile = mst(VolatileCode, VolatileData);
+
+// Prints: 3
+console.log(Volatile.create().test());
+
 const AsyncData = types.model({});
 
 class AsyncCode extends shim(AsyncData) {

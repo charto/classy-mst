@@ -89,6 +89,28 @@ npm install
 npm test
 ```
 
+Volatile state
+--------------
+
+You can create a model with volatile state directly using `mobx-state-tree` syntax:
+
+```TypeScript
+const VolatileData = types.model({}).volatile(
+	(self) => ({ a: 1 })
+);
+```
+
+Alternatively, for most types of volatile members (not functions, however)
+you can define and initialize them inside the ES6 class:
+
+```TypeScript
+class VolatileCode extends shim(VolatileData) {
+
+	b = 2;
+
+}
+```
+
 Asynchronous actions
 --------------------
 
