@@ -3,18 +3,37 @@ classy-mst
 
 [![npm version](https://img.shields.io/npm/v/classy-mst.svg)](https://www.npmjs.com/package/classy-mst)
 
-This package provides an alternative syntax for [mobx-state-tree](https://github.com/mobxjs/mobx-state-tree)
-(MST) based on ES6 classes. It preserves types, meaning DRY code with runtime
-type information, statically typed in the compiler when using TypeScript.
+`classy-mst` is the ultimate state management solution for TypeScript and
+JavaScript apps: a zero performance penalty wrapper around the amazing
+[mobx-state-tree](https://github.com/mobxjs/mobx-state-tree) and allowing
+standard ES6 syntax.
 
-Inheritance and `super` work as you would expect. The major differences
-compared to ordinary ES6 classes are:
+ES6 class methods become "views" or "actions" (when decorated with `@action`
+to indicate they have side effects). Then:
 
-- `this instanceof Class` is false inside `Class`, because `this` refers to a MobX state tree node.
-- Class properties must be declared using MST type syntax in a separate block before the class.
-- MST has no static properties.
+- Changes automatically propagate through views.
+- State is protected from modification outside actions.
+- State and state diffs (patches) are serializable to JSON and replayable for undo / redo.
+- Redux DevTools are supported for working with the state.
+  - The underlying technology is still [MobX](https://mobx.js.org/).
 
-Here's how it looks:
+[mobx-state-tree](https://github.com/mobxjs/mobx-state-tree) provides the
+state management, `classy-mst` adds the benefits of standard ES6 syntax:
+
+- Less boilerplate.
+- `this`, `super` and inheritance work as you would expect.
+- No lock-in, easier to switch to other technology if needed.
+
+Usage
+-----
+
+Install:
+
+```bash
+npm install --save mobx mobx-state-tree classy-mst
+```
+
+Use in your code:
 
 ```TypeScript
 import { types } from 'mobx-state-tree';
@@ -39,6 +58,9 @@ class TodoCode extends shim(TodoData) {
 const Todo = mst(TodoCode, TodoData);
 ```
 
+ES6 methods become views (assumed to have no side-effects) unless decorated
+with `@action`, which turns them into actions.
+
 Afterwards, `Todo` is a regular MST type. Here, `TodoData` is an MST type
 holding the properties with MobX state tracking magic, and `TodoCode` is only
 a block of code with methods (views and actions) to use with the type.
@@ -47,17 +69,38 @@ The `mst` function binds the two together (producing a new type "inheriting"
 `TodoData`), and the `TodoCode` class should not be used directly.
 
 The `shim` function is a tiny wrapper that makes TypeScript accept MST types
-as superclasses. You can inherit from and extend other classes wrapped in MST
-types as follows:
+as superclasses.
+
+The major differences compared to ordinary ES6 classes are:
+
+- `this instanceof Class` is false inside `Class`, because `this` refers to a MobX state tree node.
+- Class properties must be declared using MST type syntax in a separate block before the class.
+- MST has no static properties.
+
+You can look at the [tests](https://github.com/charto/classy-mst/blob/master/test/test.ts)
+for fully working examples, or run them like this:
+
+```bash
+git clone https://github.com/charto/classy-mst.git
+cd classy-mst
+npm install
+npm test
+```
+
+Inheritance
+-----------
+
+You can inherit from and extend other classes wrapped in MST types as follows:
 
 ```TypeScript
 // Inherit Todo and add new count property.
+
 const SpecialTodoData = Todo.props({
-	count: types.optional(types.number, 0)
+	count: 0
 });
 
 // Original MST type "Todo" containing the wrapped methods
-// is needed for binding references to "super".
+// is needed by shim for binding references to "super".
 
 class SpecialTodoCode extends shim(SpecialTodoData, Todo) {
 
@@ -73,21 +116,8 @@ const SpecialTodo = mst(SpecialTodoCode, SpecialTodoData);
 ```
 
 If adding new properties to the superclass, it's important to pass the
-unmodified superclass as the second parameter to `shim`, to get its prototype
-so that `super` points to a superclass definition with appropriate ES6 methods.
-
-ES6 methods become views (assumed to have no side-effects) unless decorated
-with `@action`, which turns them into actions.
-
-You can look at the [tests](https://github.com/charto/classy-mst/blob/master/test/test.ts)
-for a fully working example, or run them like this:
-
-```bash
-git clone https://github.com/charto/classy-mst.git
-cd classy-mst
-npm install
-npm test
-```
+unmodified superclass as the second parameter to `shim` so that
+`super` is initialized correctly.
 
 Volatile state
 --------------

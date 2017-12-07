@@ -24,7 +24,7 @@ class TodoCode extends shim(TodoData) {
 const Todo = mst(TodoCode, TodoData);
 
 const SpecialTodoData = Todo.props({
-	count: types.optional(types.number, 0)
+	count: 0
 });
 
 class SpecialTodoCode extends shim(SpecialTodoData, Todo) {
