@@ -2,12 +2,12 @@ import { IObservableArray } from 'mobx';
 import { types, flow, onSnapshot, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
 import { mst, shim, action, ModelInterface } from '..';
 
-const TodoData = shim(types.model({
+const TodoData = types.model({
 	title: types.string,
 	done: false
-}));
+});
 
-class TodoCode extends TodoData {
+class TodoCode extends shim(TodoData) {
 
 	@action
 	toggle() {
@@ -23,14 +23,11 @@ class TodoCode extends TodoData {
 
 const Todo = mst(TodoCode, TodoData);
 
-const SpecialTodoData = shim(
-	Todo.props({
-		count: types.optional(types.number, 0)
-	}),
-	Todo
-);
+const SpecialTodoData = Todo.props({
+	count: types.optional(types.number, 0)
+});
 
-class SpecialTodoCode extends SpecialTodoData {
+class SpecialTodoCode extends shim(SpecialTodoData, Todo) {
 
 	@action
 	toggle(increment = 1) {
@@ -65,9 +62,9 @@ store.todos[1].toggle(99);
 store.todos[0].print();
 store.todos[1].print();
 
-const AsyncData = shim(types.model({}));
+const AsyncData = types.model({});
 
-class AsyncCode extends AsyncData {
+class AsyncCode extends shim(AsyncData) {
 
 	@action
 	run() {
@@ -87,14 +84,14 @@ Async.create().run().then(
 	(result) => console.log(result)
 );
 
-export const NodeData = shim(types.model({
+export const NodeData = types.model({
 
 	// Non-recursive members go here, for example:
 	id: ''
 
-}));
+});
 
-export class NodeCode extends NodeData {
+export class NodeCode extends shim(NodeData) {
 
 	// Example method. Note how all members are available and fully typed,
 	// even if recursively defined.

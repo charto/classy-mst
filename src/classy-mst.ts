@@ -23,9 +23,12 @@ export interface ModelInterface<S, T> extends IModelType<S, T> {
   * @param model Model (MST tree node)
 */
 
-export function shim<S, T>(model: IModelType<S, T>, parent?: any): ModelInterface<S, T> {
-	if(parent && parent.prototype) (model as any).prototype = parent.prototype;
-	return(model as any);
+export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterface<S, T> {
+	function Base() {}
+
+	if(Parent && Parent.prototype) Base.prototype = Parent.prototype;
+
+	return(Base as any);
 }
 
 /** Decorator for actions. By default the mst function treats methods as views. */
@@ -44,7 +47,7 @@ export function mst<S, T, U>(code: new() => U, data: IModelType<S, T>): IModelTy
 	function bindMethods(self: any, defs: { [name: string]: any }) {
 		const result: { [name: string]: any } = {};
 
-		for(let name of Object.keys(defs)) {
+		for(let name of Object.getOwnPropertyNames(defs)) {
 			const method = defs[name];
 			if(method && name != 'constructor' && name != '$actions') {
 				result[name] = function() {

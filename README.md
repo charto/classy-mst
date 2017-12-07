@@ -20,14 +20,14 @@ Here's how it looks:
 import { types } from 'mobx-state-tree';
 import { mst, shim, action } from 'classy-mst';
 
-const TodoData = shim(types.model({
+const TodoData = types.model({
 
 	title: types.string,
 	done: false
 
-}))
+});
 
-class TodoCode extends TodoData {
+class TodoCode extends shim(TodoData) {
 
 	@action
 	toggle() {
@@ -52,18 +52,14 @@ types as follows:
 
 ```TypeScript
 // Inherit Todo and add new count property.
-const SpecialTodoData = shim(
+const SpecialTodoData = Todo.props({
+	count: types.optional(types.number, 0)
+});
 
-	Todo.props({
-		count: types.optional(types.number, 0)
-	}),
-	// Original MST type containing the wrapped methods,
-	// needed for binding references to "super".
-	Todo
+// Original MST type "Todo" containing the wrapped methods
+// is needed for binding references to "super".
 
-);
-
-class SpecialTodoCode extends SpecialTodoData {
+class SpecialTodoCode extends shim(SpecialTodoData, Todo) {
 
 	@action
 	toggle() {
@@ -97,33 +93,33 @@ Asynchronous actions
 --------------------
 
 Asynchronous actions return a promise. The actual method needs to define a
-generator, pass it to `process` or `flow` from `mobx-state-tree`, call the
-returned function and return its result, like this:
+generator, pass it to `flow` from `mobx-state-tree`, call the returned
+function and return its result, like this:
 
 ```TypeScript
 import { types, process } from 'mobx-state-tree';
 import { mst, shim, action } from 'classy-mst';
 
-const AsyncData = shim(types.model({}));
+const AsyncData = types.model({});
 
-class AsyncCode extends AsyncData {
+class AsyncCode extends shim(AsyncData) {
 
-        @action
-        run() {
-                function* generate() {
-                        yield Promise.resolve('This gets lost');
-                        return('Returned value');
-                }
+	@action
+	run() {
+		function* generate() {
+			yield Promise.resolve('This gets lost');
+			return('Returned value');
+		}
 
-                return(process(generate)());
-        }
+		return(flow(generate)());
+	}
 
 }
 
 const Async = mst(AsyncCode, AsyncData);
 
 Async.create().run().then(
-        (result) => console.log(result)
+	(result) => console.log(result)
 );
 ```
 
@@ -145,14 +141,14 @@ import { IObservableArray } from 'mobx';
 import { types, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
 import { mst, shim, action, ModelInterface } from 'classy-mst';
 
-export const NodeData = shim(types.model({
+export const NodeData = types.model({
 
 	// Non-recursive members go here, for example:
 	id: ''
 
-}));
+});
 
-export class NodeCode extends NodeData {
+export class NodeCode extends shim(NodeData) {
 
 	// Example method. Note how all members are available and fully typed,
 	// even if recursively defined.
