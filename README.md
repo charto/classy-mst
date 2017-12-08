@@ -149,7 +149,7 @@ generator, pass it to `flow` from `mobx-state-tree`, call the returned
 function and return its result, like this:
 
 ```TypeScript
-import { types, process } from 'mobx-state-tree';
+import { types, flow } from 'mobx-state-tree';
 import { mst, shim, action } from 'classy-mst';
 
 const AsyncData = types.model({});
