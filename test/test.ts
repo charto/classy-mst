@@ -1,6 +1,6 @@
 import { IObservableArray } from 'mobx';
 import { types, flow, onSnapshot, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
-import { mst, shim, action, ModelInterface } from '..';
+import { mst, shim, action, setTypeTag, ModelInterface } from '..';
 
 const TodoData = types.model({
 	title: types.string,
@@ -46,10 +46,12 @@ const Store = types.model({
 	todos: types.array(Todo)
 });
 
+setTypeTag('type');
+
 const store = Store.create({
 	todos: [
 		{ title: 'Foo' },
-		SpecialTodo.create({ title: 'Bar' })
+		Todo.create({ title: 'Bar', type: 'SpecialTodo' } as any)
 	]
 });
 

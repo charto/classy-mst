@@ -19,6 +19,12 @@ export interface ModelInterface<S, T> extends IModelType<S, T> {
 	new(): ModelClass<S, T> & T;
 }
 
+export let typeTag: string | undefined = '$';
+
+export function setTypeTag(tag?: string) {
+	typeTag = tag;
+}
+
 /** Force TypeScript to accept an MST model as a superclass.
   * @param model Model (MST tree node)
 */
@@ -26,8 +32,8 @@ export interface ModelInterface<S, T> extends IModelType<S, T> {
 export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterface<S, T> {
 	function Base() {}
 
-	if(Parent && Parent.$class) {
-		Base.prototype = Parent.$class.prototype;
+	if(Parent && Parent.$proto) {
+		Base.prototype = Parent.$proto;
 		Base.prototype = new (Base as any)();
 		Base.prototype.$parent = Parent;
 		if(Base.prototype.$actions) Base.prototype.$actions = {};
@@ -76,26 +82,36 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	).views(
 		(self) => bindMembers(self, true, Code.prototype)
 	).actions(
+		(self) => ({
+			postProcessSnapshot: (snap: any) => {
+				if(typeTag) snap[typeTag] = name;
+				return(snap);
+			}
+		})
+	).actions(
 		(self) => bindMembers(self, true, Code.prototype.$actions || [])
 	).volatile(
 		(self) => bindMembers(self, false, new Code())
 	) as any;
 
-	let ParentModel = Code.prototype.$parent;
+	const Union: any = types.late(() => types.union.apply(types, Union.$typeList));
 
-	while(ParentModel) {
-		const typeList = ParentModel.$types;
+	Union.$typeList = [ (snap: any) =>
+		(snap && typeTag && snap[typeTag] && Union.$typeTbl[snap[typeTag]]) || Model
+	];
+	Union.$typeTbl = {};
+	Union.$proto = Code.prototype;
+	Union.props = function() { return(Model.props.apply(Model, arguments)); };
+
+	let Parent = Union;
+
+	for(let Parent = Union; Parent; Parent = Parent.$proto.$parent) {
+		const typeList = Parent.$typeList;
+		const typeTbl = Parent.$typeTbl;
 
 		if(typeList) typeList.push(Model);
-
-		ParentModel = ParentModel.$class.prototype.$parent;
+		if(typeTbl && name) typeTbl[name] = Model;
 	}
-
-	const Union: any = types.late(() => types.union.apply(types, Union.$types));
-
-	Union.$types = [ (snap: any) => Model, Model ];
-	Union.$class = Code;
-	Union.props = function() { return(Model.props.apply(Model, arguments)); };
 
 	return(Union);
 }
