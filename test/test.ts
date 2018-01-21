@@ -21,7 +21,7 @@ class TodoCode extends shim(TodoData) {
 
 }
 
-const Todo = mst(TodoCode, TodoData);
+const Todo = mst(TodoCode, TodoData, 'Todo');
 
 const SpecialTodoData = Todo.props({
 	count: 0
@@ -38,26 +38,29 @@ class SpecialTodoCode extends shim(SpecialTodoData, Todo) {
 
 }
 
-const SpecialTodo = mst(SpecialTodoCode, SpecialTodoData);
+const SpecialTodo = mst(SpecialTodoCode, SpecialTodoData, 'SpecialTodo');
+type SpecialTodoType = typeof SpecialTodo.Type;
+interface SpecialTodo extends SpecialTodoType {}
 
 const Store = types.model({
-	todos: types.array(SpecialTodo)
+	todos: types.array(Todo)
 });
 
 const store = Store.create({
 	todos: [
 		{ title: 'Foo' },
-		{ title: 'Bar' }
+		SpecialTodo.create({ title: 'Bar' })
 	]
 });
 
 onSnapshot(store, (snapshot) => {
+	console.log('SNAPSHOT');
 	console.log(snapshot)
 })
 
 store.todos[0].toggle();
 store.todos[1].toggle();
-store.todos[1].toggle(99);
+(store.todos[1] as SpecialTodo).toggle(99);
 
 store.todos[0].print();
 store.todos[1].print();

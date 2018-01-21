@@ -1,7 +1,7 @@
 // This file is part of classy-mst, copyright (c) 2017 BusFaster Ltd.
 // Released under the MIT license, see LICENSE.
 
-import { IModelType } from 'mobx-state-tree';
+import { IModelType, types } from 'mobx-state-tree';
 
 /** Fake complete, generic implementation of IModelType. */
 
@@ -26,9 +26,10 @@ export interface ModelInterface<S, T> extends IModelType<S, T> {
 export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterface<S, T> {
 	function Base() {}
 
-	if(Parent && Parent.prototype) {
-		Base.prototype = Parent.prototype;
+	if(Parent && Parent.$class) {
+		Base.prototype = Parent.$class.prototype;
 		Base.prototype = new (Base as any)();
+		Base.prototype.$parent = Parent;
 		if(Base.prototype.$actions) Base.prototype.$actions = {};
 	}
 
@@ -47,14 +48,14 @@ export function action(target: { [key: string]: any }, key: string) {
   *   and actions (if decorated).
   * @param data MST model with properties. */
 
-export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>): IModelType<S, U> {
+export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: string): IModelType<S, U> {
 	function bindMembers(self: any, methodFlag: boolean, defs: { [name: string]: any }) {
 		const result: { [name: string]: any } = {};
 
 		for(let name of Object.getOwnPropertyNames(defs)) {
 			const member = defs[name];
 
-			if(name == 'constructor' || name == '$actions') continue;
+			if(name == 'constructor' || name == '$actions' || name == '$parent') continue;
 			if((typeof(member) == 'function') != methodFlag) continue;
 
 			if(methodFlag) {
@@ -67,7 +68,12 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>): IModelTy
 		return(result);
 	}
 
-	const Model = Data.views(
+	if(name) Data = Data.named(name);
+
+	let Model = Data.preProcessSnapshot(
+		// Instantiating a union of models requires a snapshot.
+		(snap: any) => snap || {}
+	).views(
 		(self) => bindMembers(self, true, Code.prototype)
 	).actions(
 		(self) => bindMembers(self, true, Code.prototype.$actions || [])
@@ -75,7 +81,21 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>): IModelTy
 		(self) => bindMembers(self, false, new Code())
 	) as any;
 
-	Model.prototype = Code.prototype;
+	let ParentModel = Code.prototype.$parent;
 
-	return(Model);
+	while(ParentModel) {
+		const typeList = ParentModel.$types;
+
+		if(typeList) typeList.push(Model);
+
+		ParentModel = ParentModel.$class.prototype.$parent;
+	}
+
+	const Union: any = types.late(() => types.union.apply(types, Union.$types));
+
+	Union.$types = [ (snap: any) => Model, Model ];
+	Union.$class = Code;
+	Union.props = function() { return(Model.props.apply(Model, arguments)); };
+
+	return(Union);
 }
