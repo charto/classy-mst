@@ -26,7 +26,11 @@ export interface ModelInterface<S, T> extends IModelType<S, T> {
 export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterface<S, T> {
 	function Base() {}
 
-	if(Parent && Parent.prototype) Base.prototype = Parent.prototype;
+	if(Parent && Parent.prototype) {
+		Base.prototype = Parent.prototype;
+		Base.prototype = new (Base as any)();
+		if(Base.prototype.$actions) Base.prototype.$actions = {};
+	}
 
 	return(Base as any);
 }
