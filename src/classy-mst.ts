@@ -76,6 +76,8 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 
 	if(name) Data = Data.named(name);
 
+	const Union: any = types.late(() => types.union.apply(types, Union.$typeList));
+
 	let Model = Data.preProcessSnapshot(
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
@@ -84,7 +86,7 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	).actions(
 		(self) => ({
 			postProcessSnapshot: (snap: any) => {
-				if(typeTag) snap[typeTag] = name;
+				if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
 				return(snap);
 			}
 		})
@@ -93,8 +95,6 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	).volatile(
 		(self) => bindMembers(self, false, new Code())
 	) as any;
-
-	const Union: any = types.late(() => types.union.apply(types, Union.$typeList));
 
 	Union.$typeList = [ (snap: any) =>
 		(snap && typeTag && snap[typeTag] && Union.$typeTbl[snap[typeTag]]) || Model
