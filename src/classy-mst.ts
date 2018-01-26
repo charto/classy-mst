@@ -59,16 +59,25 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 		const result: { [name: string]: any } = {};
 
 		for(let name of Object.getOwnPropertyNames(defs)) {
-			const member = defs[name];
-
 			if(name == 'constructor' || name == '$actions' || name == '$parent') continue;
-			if((typeof(member) == 'function') != methodFlag) continue;
 
-			if(methodFlag) {
-				result[name] = function() {
-					return(member.apply(self, arguments));
+			const desc = Object.getOwnPropertyDescriptor(defs, name);
+
+			if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
+				const member = (desc && desc.value) || defs[name];
+
+				if((typeof(member) == 'function') != methodFlag) continue;
+
+				if(methodFlag) {
+					result[name] = function() {
+						return(member.apply(self, arguments));
+					}
+				} else {
+					result[name] = member;
 				}
-			} else result[name] = member;
+			} else {
+				Object.defineProperty(result, name, desc);
+			}
 		}
 
 		return(result);
