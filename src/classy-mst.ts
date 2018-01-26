@@ -76,6 +76,16 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 					result[name] = member;
 				}
 			} else {
+				if(desc.get) {
+					const getter = desc.get;
+					desc.get = () => getter.call(self);
+				}
+
+				if(desc.set) {
+					const setter = desc.set;
+					desc.set = (value: any) => setter.call(self, value);
+				}
+
 				Object.defineProperty(result, name, desc);
 			}
 		}
