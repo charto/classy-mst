@@ -19,6 +19,14 @@ class TodoCode extends shim(TodoData) {
 		console.log(this.done);
 	}
 
+	get pending() {
+		return(!this.done);
+	}
+
+	set pending(flag: boolean) {
+		if(this.done == flag) this.toggle();
+	}
+
 }
 
 const Todo = mst(TodoCode, TodoData, 'Todo');
@@ -60,12 +68,20 @@ onSnapshot(store, (snapshot) => {
 	console.log(snapshot)
 })
 
+const todo = store.todos[1] as SpecialTodo;
+
 store.todos[0].toggle();
 store.todos[1].toggle();
-(store.todos[1] as SpecialTodo).toggle(99);
+todo.toggle(99);
 
 store.todos[0].print();
 store.todos[1].print();
+
+console.log(todo.pending);
+todo.toggle();
+console.log(todo.pending);
+todo.pending = true;
+console.log(todo.pending);
 
 const VolatileData = types.model(
 	{}
