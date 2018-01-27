@@ -1,21 +1,21 @@
 // This file is part of classy-mst, copyright (c) 2017 BusFaster Ltd.
 // Released under the MIT license, see LICENSE.
 
-import { IModelType, types } from 'mobx-state-tree';
+import { IModelType, IStateTreeNode, types } from 'mobx-state-tree';
 
 /** Fake complete, generic implementation of IModelType. */
 
-export declare const AbstractModel: new() => IModelType<any, any>;
+export declare const AbstractModel: new() => IStateTreeNode & IModelType<any, any>;
 
 /** Fake complete, specialized implementation of IModelType.
   * This allows interfaces to include all of its static and dynamic members. */
 
-export declare abstract class ModelClass<S, T> extends AbstractModel implements IModelType<S, T> {}
+export declare abstract class ModelClass<S, T> extends AbstractModel implements IStateTreeNode, IModelType<S, T> {}
 
 /** Interface with all IModelType static and dynamic members,
   * callable to construct a specialized instance. */
 
-export interface ModelInterface<S, T> extends IModelType<S, T> {
+export interface ModelInterface<S, T> {
 	new(): ModelClass<S, T> & T;
 }
 
