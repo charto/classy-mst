@@ -25,21 +25,20 @@ export function setTypeTag(tag?: string) {
 	typeTag = tag;
 }
 
+function BaseClass() {}
+
 /** Force TypeScript to accept an MST model as a superclass.
-  * @param model Model (MST tree node)
-*/
+  * @param model Model (MST tree node) */
 
 export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterface<S, T> {
-	function Base() {}
-
 	if(Parent && Parent.$proto) {
-		Base.prototype = Parent.$proto;
-		Base.prototype = new (Base as any)();
-		Base.prototype.$parent = Parent;
-		if(Base.prototype.$actions) Base.prototype.$actions = {};
+		BaseClass.prototype = Parent.$proto;
+		BaseClass.prototype = new (BaseClass as any)();
+		BaseClass.prototype.$parent = Parent;
+		if(BaseClass.prototype.$actions) BaseClass.prototype.$actions = {};
 	}
 
-	return(Base as any);
+	return(BaseClass as any);
 }
 
 /** Decorator for actions. By default the mst function treats methods as views. */
@@ -61,7 +60,7 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 		for(let name of Object.getOwnPropertyNames(defs)) {
 			if(name == 'constructor' || name == '$actions' || name == '$parent') continue;
 
-			const desc = Object.getOwnPropertyDescriptor(defs, name);
+			const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(defs, name);
 
 			if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
 				const member = (desc && desc.value) || defs[name];
