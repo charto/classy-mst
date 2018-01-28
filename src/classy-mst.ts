@@ -1,4 +1,4 @@
-// This file is part of classy-mst, copyright (c) 2017 BusFaster Ltd.
+// This file is part of classy-mst, copyright (c) 2017-2018 BusFaster Ltd.
 // Released under the MIT license, see LICENSE.
 
 import { IType, IModelType, IStateTreeNode, types } from 'mobx-state-tree';

@@ -55,7 +55,7 @@ class TodoCode extends shim(TodoData) {
 
 }
 
-const Todo = mst(TodoCode, TodoData);
+const Todo = mst(TodoCode, TodoData, 'Todo');
 ```
 
 ES6 methods become views (assumed to have no side-effects) unless decorated
@@ -67,9 +67,13 @@ a block of code with methods (views and actions) to use with the type.
 
 The `mst` function binds the two together (producing a new type "inheriting"
 `TodoData`), and the `TodoCode` class should not be used directly.
+A third, optional parameter gives the resulting model a name.
+Names are required for polymorphism to work correctly, when serializing
+models to JSON containing fields supporting different possible subclasses.
 
 The `shim` function is a tiny wrapper that makes TypeScript accept MST types
-as superclasses.
+as superclasses. It must be used in the `extends` clause of the ES6 class
+defining the views and actions.
 
 The major differences compared to ordinary ES6 classes are:
 
@@ -112,12 +116,52 @@ class SpecialTodoCode extends shim(SpecialTodoData, Todo) {
 
 }
 
-const SpecialTodo = mst(SpecialTodoCode, SpecialTodoData);
+const SpecialTodo = mst(SpecialTodoCode, SpecialTodoData, 'SpecialTodo');
 ```
 
 If adding new properties to the superclass, it's important to pass the
 unmodified superclass as the second parameter to `shim` so that
 `super` is initialized correctly.
+
+Polymorphism
+------------
+
+Instances of subclasses can be used in place of their parent classes inside models.
+Due to `mobx-state-tree` implementation internals, both classes must have been defined
+before the first parent class instance has been created anywhere in the program.
+
+Snapshots containing polymorphic types require type names in the serialized JSON,
+to identify the correct subclass when applying the snapshot.
+A special key `$` is automatically added in snapshots when an object in the tree
+belongs to a subclass of the class actually defined in the model.
+
+The default key `$` for types can be changed by passing a different string to the
+`setTypeTag` function before creating any model instances. For example:
+
+```TypeScript
+import { getSnapshot } from 'mobx-state-tree';
+import { setTypeTag } from 'classy-mst';
+
+setTypeTag('type');
+
+const Store = types.model({
+	todos: types.array(Todo)
+});
+
+const store = Store.create({
+	todos: [
+		SpecialTodo.create({ title: 'Baz' })
+	]
+});
+
+console.log(getSnapshot(store));
+```
+
+The above prints:
+
+```
+{ todos: [ { title: 'Baz', done: false, count: 0, type: 'SpecialTodo' } ] }
+```
 
 Volatile state
 --------------
@@ -273,4 +317,4 @@ License
 
 [The MIT License](https://raw.githubusercontent.com/charto/classy-mst/master/LICENSE)
 
-Copyright (c) 2017 BusFaster Ltd
+Copyright (c) 2017-2018 BusFaster Ltd
