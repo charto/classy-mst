@@ -36,6 +36,8 @@ export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterfac
 		BaseClass.prototype = new (BaseClass as any)();
 		BaseClass.prototype.$parent = Parent;
 		if(BaseClass.prototype.$actions) BaseClass.prototype.$actions = {};
+	} else {
+		BaseClass.prototype = {};
 	}
 
 	return(BaseClass as any);
@@ -83,7 +85,7 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 			const value = memberTbl[name];
 			const spec: MemberSpec<any> = { name, value };
 
-			if(actionTbl[name]) actionList.push(spec);
+			if(actionTbl && actionTbl[name]) actionList.push(spec);
 			else viewList.push(spec);
 		} else {
 			descList.push({ name, value: desc });
