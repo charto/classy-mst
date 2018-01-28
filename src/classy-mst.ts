@@ -1,7 +1,7 @@
 // This file is part of classy-mst, copyright (c) 2017 BusFaster Ltd.
 // Released under the MIT license, see LICENSE.
 
-import { IModelType, IStateTreeNode, types } from 'mobx-state-tree';
+import { IType, IModelType, IStateTreeNode, types } from 'mobx-state-tree';
 
 /** Fake complete, generic implementation of IModelType. */
 
@@ -44,8 +44,18 @@ export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterfac
 /** Decorator for actions. By default the mst function treats methods as views. */
 
 export function action(target: { [key: string]: any }, key: string) {
-	(target.$actions || (target.$actions = {}))[key] = target[key];
-	target[key] = null;
+	(target.$actions || (target.$actions = {}))[key] = true;
+}
+
+interface MemberSpec<MemberType> {
+	name: string;
+	value: MemberType;
+}
+
+interface ClassyUnion extends IModelType<any, any> {
+	$proto: any;
+	$typeList: (IModelType<any, any> | ((snap: any) => IModelType<any, any>))[];
+	$typeTbl: { [name: string]: IModelType<any, any> };
 }
 
 /** Add methods from an ES6 class into an MST model.
@@ -54,78 +64,122 @@ export function action(target: { [key: string]: any }, key: string) {
   * @param data MST model with properties. */
 
 export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: string): IModelType<S, U> {
-	function bindMembers(self: any, methodFlag: boolean, defs: { [name: string]: any }) {
-		const result: { [name: string]: any } = {};
+	const viewList: MemberSpec<Function>[] = [];
+	const actionList: MemberSpec<Function>[] = [];
+	const descList: MemberSpec<PropertyDescriptor>[] = [];
 
-		for(let name of Object.getOwnPropertyNames(defs)) {
-			if(name == 'constructor' || name == '$actions' || name == '$parent') continue;
+	const memberTbl = Code.prototype;
+	const actionTbl = memberTbl.$actions;
+	const volatileTbl: { [name: string]: any } = {};
 
-			const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(defs, name);
+	// Extract views, actions, getters and setters from the class prototype.
 
-			if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
-				const member = (desc && desc.value) || defs[name];
+	for(let name of Object.getOwnPropertyNames(memberTbl)) {
+		if(name == 'constructor' || name == '$actions' || name == '$parent') continue;
 
-				if((typeof(member) == 'function') != methodFlag) continue;
+		const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(memberTbl, name);
 
-				if(methodFlag) {
-					result[name] = function() {
-						return(member.apply(self, arguments));
-					}
-				} else {
-					result[name] = member;
-				}
-			} else {
-				if(desc.get) {
-					const getter = desc.get;
-					desc.get = () => getter.call(self);
-				}
+		if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
+			const value = memberTbl[name];
+			const spec: MemberSpec<any> = { name, value };
 
-				if(desc.set) {
-					const setter = desc.set;
-					desc.set = (value: any) => setter.call(self, value);
-				}
-
-				Object.defineProperty(result, name, desc);
-			}
+			if(actionTbl[name]) actionList.push(spec);
+			else viewList.push(spec);
+		} else {
+			descList.push({ name, value: desc });
 		}
-
-		return(result);
 	}
+
+	// Create a sample instance and extract volatile members
+	// defined in the constructor.
+
+	const instance: { [name: string]: any } = new Code();
+
+	for(let name of Object.getOwnPropertyNames(instance)) {
+		volatileTbl[name] = instance[name];
+	}
+
+	// Apply optional name given to the model.
 
 	if(name) Data = Data.named(name);
 
-	const Union: any = types.late(() => types.union.apply(types, Union.$typeList));
+	// Bind views, actions and volatile state to the model.
 
 	let Model = Data.preProcessSnapshot(
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
-	).views(
-		(self) => bindMembers(self, true, Code.prototype)
-	).actions(
-		(self) => ({
+	).views((self) => {
+		const result: { [name: string]: Function } = {};
+
+		for(let { name, value } of viewList) {
+			result[name] = function() {
+				return(value.apply(self, arguments));
+			}
+		}
+
+		for(let { name, value } of descList) {
+			const { get, set } = value;
+
+			if(get) value.get = () => get.call(self);
+			if(set) value.set = (value: any) => set.call(self, value);
+
+			Object.defineProperty(result, name, value);
+		}
+
+		return(result);
+	}).actions((self) => {
+		const result: { [name: string]: Function } = {
 			postProcessSnapshot: (snap: any) => {
 				if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
 				return(snap);
 			}
-		})
-	).actions(
-		(self) => bindMembers(self, true, Code.prototype.$actions || [])
-	).volatile(
-		(self) => bindMembers(self, false, new Code())
-	) as any;
+		};
 
+		for(let { name, value } of actionList) {
+			result[name] = function() {
+				return(value.apply(self, arguments));
+			}
+		}
+
+		return(result);
+	}).volatile((self) => volatileTbl);
+
+	// Union of this class and all of its subclasses.
+	// Late evaluation allows subclasses to add themselves to the type list
+	// before any instances are created.
+	const Union: ClassyUnion = types.late(() => types.union.apply(types, Union.$typeList)) as any;
+
+	// First item in the type list is a dispatcher function
+	// for parsing type tags in snapshots.
 	Union.$typeList = [ (snap: any) =>
 		(snap && typeTag && snap[typeTag] && Union.$typeTbl[snap[typeTag]]) || Model
 	];
+
 	Union.$typeTbl = {};
 	Union.$proto = Code.prototype;
-	Union.props = function() { return(Model.props.apply(Model, arguments)); };
 
-	let Parent = Union;
+	// Copy methods from model object into returned union,
+	// making it work like a regular model.
 
-	for(let Parent = Union; Parent; Parent = Parent.$proto.$parent) {
-		const typeList = Parent.$typeList;
-		const typeTbl = Parent.$typeTbl;
+	for(let mixin: { [key: string]: any } = Model; mixin; mixin = Object.getPrototypeOf(mixin)) {
+		for(let key of Object.getOwnPropertyNames(mixin)) {
+			const value = !(key in Union) && mixin[key];
+
+			if(typeof(value) == 'function') {
+				(Union as { [key: string]: any })[key] = function() {
+					return(value.apply(Model, arguments));
+				};
+			}
+		}
+	}
+
+	// Initialize union of allowed class substitutes with the class itself,
+	// and augment unions of all parent classes with this subclass,
+	// to allow polymorphism.
+
+	for(let Class = Union; Class; Class = Class.$proto.$parent) {
+		const typeList = Class.$typeList;
+		const typeTbl = Class.$typeTbl;
 
 		if(typeList) typeList.push(Model);
 		if(typeTbl && name) typeTbl[name] = Model;
