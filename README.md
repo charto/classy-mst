@@ -24,6 +24,18 @@ state management, `classy-mst` adds the benefits of standard ES6 syntax:
 - `this`, `super` and inheritance work as you would expect.
 - No lock-in, easier to switch to other technology if needed.
 
+Contents
+========
+
+- [Usage](#usage)
+- [Inheritance](#inheritance)
+- [Polymorphism](#polymorphism)
+- [Getters and setters](#getters-and-setters)
+- [Volatile state](#volatile-state)
+- [Asynchronous actions](#asynchronous-actions)
+- [Recursive types](#recursive-types)
+- [License](#license)
+
 Usage
 -----
 
