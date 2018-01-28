@@ -163,6 +163,34 @@ The above prints:
 { todos: [ { title: 'Baz', done: false, count: 0, type: 'SpecialTodo' } ] }
 ```
 
+Getters and setters
+-------------------
+
+Class members with getters become MobX computed properties.
+Setters are not considered actions themselves, so they're only allowed to
+modify internal state by calling other methods decorated with `@action`.
+
+For example:
+
+```TypeScript
+class TodoCode extends shim(TodoData) {
+
+        @action
+        toggle() {
+                this.done = !this.done;
+        }
+
+        get pending() {
+                return(!this.done);
+        }
+
+        set pending(flag: boolean) {
+                if(this.done == flag) this.toggle();
+        }
+
+}
+```
+
 Volatile state
 --------------
 
