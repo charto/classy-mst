@@ -1,6 +1,6 @@
 {
   "name": "classy-mst",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "ES6-like syntax for mobx-state-tree",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
