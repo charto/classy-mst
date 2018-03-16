@@ -165,12 +165,16 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 
 	for(let mixin: { [key: string]: any } = Model; mixin; mixin = Object.getPrototypeOf(mixin)) {
 		for(let key of Object.getOwnPropertyNames(mixin)) {
-			const value = !(key in Union) && mixin[key];
+			const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(mixin, key);
 
-			if(typeof(value) == 'function') {
-				(Union as { [key: string]: any })[key] = function() {
-					return(value.apply(Model, arguments));
-				};
+			if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
+				const value = !(key in Union) && mixin[key];
+
+				if(typeof(value) == 'function') {
+					(Union as { [key: string]: any })[key] = function() {
+						return(value.apply(Model, arguments));
+					};
+				}
 			}
 		}
 	}
