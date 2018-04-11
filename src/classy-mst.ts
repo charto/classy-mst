@@ -81,7 +81,7 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 
 		const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(memberTbl, name);
 
-		if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
+		if(!desc || (desc.configurable && desc.writable && !desc.get && !desc.set)) {
 			const value = memberTbl[name];
 			const spec: MemberSpec<any> = { name, value };
 
@@ -167,7 +167,7 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 		for(let key of Object.getOwnPropertyNames(mixin)) {
 			const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(mixin, key);
 
-			if(!desc || (desc.configurable && desc.enumerable && desc.writable && !desc.get && !desc.set)) {
+			if(!desc || (desc.configurable && desc.writable && !desc.get && !desc.set)) {
 				const value = !(key in Union) && mixin[key];
 
 				if(typeof(value) == 'function') {
