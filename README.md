@@ -1,6 +1,7 @@
 classy-mst
 ==========
 
+[![build status](https://travis-ci.org/charto/classy-mst.svg?branch=master)](http://travis-ci.org/charto/classy-mst)
 [![npm version](https://img.shields.io/npm/v/classy-mst.svg)](https://www.npmjs.com/package/classy-mst)
 
 `classy-mst` is the ultimate state management solution for TypeScript and

@@ -1,12 +1,12 @@
 {
   "name": "classy-mst",
-  "version": "0.4.1",
+  "version": "1.0.0",
   "description": "ES6-like syntax for mobx-state-tree",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
     "tsc": "tsc",
-    "prepublish": "tsc -p src && tsc -p src/ts-amd.json && node src/fix-amd.js",
+    "prepublish": "tsc -p src && tsc -p src/ts-amd.json && node src/fix-amd.js classy-mst",
     "test": "tsc -p test && node test/test.js"
   },
   "author": "Juha Järvi",
