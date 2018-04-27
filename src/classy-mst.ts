@@ -112,7 +112,22 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	let Model = Data.preProcessSnapshot(
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
-	);
+	).actions((self) => {
+		const result: { [name: string]: Function } = {
+			postProcessSnapshot: (snap: any) => {
+				if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
+				return(snap);
+			}
+		};
+
+		for(let { name, value } of actionList) {
+			result[name] = function() {
+				return(value.apply(self, arguments));
+			}
+		}
+
+		return(result);
+	});
 
 	Model = !(viewList.length + descList.length) ? Model : Model.views((self) => {
 		const result: { [name: string]: Function } = {};
@@ -130,23 +145,6 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 			if(set) value.set = (value: any) => set.call(self, value);
 
 			Object.defineProperty(result, name, value);
-		}
-
-		return(result);
-	});
-
-	Model = !actionList.length ? Model : Model.actions((self) => {
-		const result: { [name: string]: Function } = {
-			postProcessSnapshot: (snap: any) => {
-				if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
-				return(snap);
-			}
-		};
-
-		for(let { name, value } of actionList) {
-			result[name] = function() {
-				return(value.apply(self, arguments));
-			}
 		}
 
 		return(result);
