@@ -1,7 +1,8 @@
 // This file is part of classy-mst, copyright (c) 2017-2018 BusFaster Ltd.
 // Released under the MIT license, see LICENSE.
 
-import { IType, IModelType, IStateTreeNode, types } from 'mobx-state-tree';
+import { IObservableArray } from 'mobx';
+import { IType, IModelType, IComplexType, IStateTreeNode, ISnapshottable, types } from 'mobx-state-tree';
 
 /** Fake complete, generic implementation of IModelType. */
 
@@ -96,8 +97,9 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	// defined in the constructor.
 
 	const instance: { [name: string]: any } = new Code();
+	const volatileList = Object.getOwnPropertyNames(instance);
 
-	for(let name of Object.getOwnPropertyNames(instance)) {
+	for(let name of volatileList) {
 		volatileTbl[name] = instance[name];
 	}
 
@@ -110,7 +112,9 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	let Model = Data.preProcessSnapshot(
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
-	).views((self) => {
+	);
+
+	Model = !(viewList.length + descList.length) ? Model : Model.views((self) => {
 		const result: { [name: string]: Function } = {};
 
 		for(let { name, value } of viewList) {
@@ -129,7 +133,9 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 		}
 
 		return(result);
-	}).actions((self) => {
+	});
+
+	Model = !actionList.length ? Model : Model.actions((self) => {
 		const result: { [name: string]: Function } = {
 			postProcessSnapshot: (snap: any) => {
 				if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
@@ -144,8 +150,14 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 		}
 
 		return(result);
-	}).volatile((self) => volatileTbl);
+	});
 
+	Model = !volatileList.length ? Model : Model.volatile((self) => volatileTbl);
+
+	return(polymorphic(Code, Model, name));
+}
+
+export function polymorphic<S, T, U>(Code: new() => U, Model: IModelType<S, T>, name?: string): IModelType<S, U> {
 	// Union of this class and all of its subclasses.
 	// Late evaluation allows subclasses to add themselves to the type list
 	// before any instances are created.
@@ -192,4 +204,24 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	}
 
 	return(Union);
+}
+
+export function mstWithChildren<S, T, U extends T>(
+	Code: new() => U,
+	Data: IModelType<S, T>,
+	name?: string
+) {
+	const Children = types.array(types.late((): any => Model));
+	const Branch = (Data as any as IModelType<S, U>).props({
+		children: types.maybe(
+			Children as IComplexType<
+				(S & { children?: any[] | null })[],
+				IObservableArray<IModelType<{}, {}>>
+			>
+		)
+	});
+
+	const Model = mst(Code, Branch, 'Node') as typeof Branch;
+
+	return({ Model, Children });
 }

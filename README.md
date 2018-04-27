@@ -81,7 +81,7 @@ The `mst` function binds the two together (producing a new type "inheriting"
 `TodoData`), and the `TodoCode` class should not be used directly.
 A third, optional parameter gives the resulting model a name.
 Names are required for polymorphism to work correctly, when serializing
-models to JSON containing fields supporting different possible subclasses.
+models to JSON containing fields with types that have further subclasses.
 
 The `shim` function is a tiny wrapper that makes TypeScript accept MST types
 as superclasses. It must be used in the `extends` clause of the ES6 class
@@ -145,7 +145,7 @@ before the first parent class instance has been created anywhere in the program.
 Snapshots containing polymorphic types require type names in the serialized JSON,
 to identify the correct subclass when applying the snapshot.
 A special key `$` is automatically added in snapshots when an object in the tree
-belongs to a subclass of the class actually defined in the model.
+belongs to a subclass of the class actually specified in the model.
 
 The default key `$` for types can be changed by passing a different string to the
 `setTypeTag` function before creating any model instances. For example:
@@ -269,88 +269,57 @@ Fully typed recursive types require some tricky syntax to avoid these TypeScript
 - `error TS2506: 'Type' is referenced directly or indirectly in its own base expression.`
 - `error TS7022: 'Type' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.`
 
-Luckily interface types are lazier so they support recursive references.
-First we can define the type with nice syntax, exactly as it should ideally work:
+If your model has a `children` property containing an array of the same model
+as their parent, the easiest solution is to add the `children` property only
+in the ES6 class and use `mstWithChildren` instead of `mst` when defining the
+model. It handles adding the property to the `mobx-state-tree` type.
+
+The function `mstWithChildren` returns an object with the members:
+
+- `Model`, the model with views, actions and a `children` property attached.
+- `Children`, the correct `mobx-state-tree` type for the `children` property.
+
+You should call it just after your class defining the views and actions
+(replacing Todo with your own class name) like this:
+
+```TypeScript
+const { Model: Todo, Children } = mstWithChildren(TodoCode, TodoData, 'Todo');
+```
+
+You can use the `Children` type inside the class methods thanks to declaration
+hoisting. Without the type, it's difficult to initialize an unset `children`
+property correctly.
+
+The `children` property should be declared in your class as
+`(this | <class name>)[]` to allow further inheritance, like this:
 
 ```TypeScript
 import { IObservableArray } from 'mobx';
 import { types, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
-import { mst, shim, action, ModelInterface } from 'classy-mst';
+import { mst, mstWithChildren, shim, action, ModelInterface } from 'classy-mst';
 
-export const NodeData = types.model({
-
-	// Non-recursive members go here, for example:
-	id: ''
-
-});
-
+export const NodeData = T.model({ value: 42 });
 export class NodeCode extends shim(NodeData) {
 
-	// Example method. Note how all members are available and fully typed,
-	// even if recursively defined.
+	@action
+	addChild(value = 42) {
+		if(!this.children) this.children = Children.create();
+		this.children.push(Node.create());
 
-	getChildIDs() {
-		for(let child of this.children || []) {
-			if(child.children) child.getChildIDs();
-			if(child.id) console.log(child.id);
-		}
+		return(this);
 	}
 
-	// Recursive members go here first.
-	children?: Node[];
-
-}
-```
-
-Then we need unfortunate boilerplate to make the compiler happy:
-
-```TypeScript
-export const NodeBase = mst(NodeCode, NodeData);
-export type NodeBase = typeof NodeBase.Type;
-
-// Interface trickery to avoid compiler errors when defining a recursive type.
-export interface NodeObservableArray extends IObservableArray<NodeRecursive> {}
-
-export interface NodeRecursive extends NodeBase {
-
-	// Recursive members go here second.
-	children: NodeObservableArray
-
+	children?: (this | NodeCode)[];
 }
 
-export type NodeArray = IComplexType<
-	(typeof NodeBase.SnapshotType & {
-
-		// Recursive members go here third.
-		children: any[]
-
-	})[],
-	NodeObservableArray
->;
-
-export const Node = NodeBase.props({
-
-	// Recursive members go here fourth.
-	children: types.maybe(types.array(types.late((): any => Node)) as NodeArray),
-
-});
-
-export type Node = typeof Node.Type;
+const { Model: Node, Children } = mstWithChildren(NodeCode, NodeData, 'Node');
 ```
 
-Finally, the new type can be used like this:
-
-```TypeScript
-const tree = Node.create({
-	children: [
-		{ children: [ { id: 'TEST' } ] }
-	]
-});
-
-// Both print: TEST
-console.log(tree.children![0].children![0].id);
-tree.getChildIDs();
-```
+If you want to use some other name than `children` for the property, easiest is
+to copy, paste and customize the `mstWithChildren` function from
+[classy-mst.ts](https://github.com/charto/classy-mst/blob/master/src/classy-mst.ts).
+Without macro support in the TypeScript compiler, the name cannot be
+parameterized while keeping the code fully typed.
 
 License
 =======
