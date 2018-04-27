@@ -32,9 +32,9 @@
     "mobx-state-tree": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^9.6.4",
-    "mobx": "^4.1.1",
-    "mobx-state-tree": "^2.0.3",
-    "typescript": "~2.8.1"
+    "@types/node": "^9.6.6",
+    "mobx": "^4.2.0",
+    "mobx-state-tree": "^2.0.4",
+    "typescript": "~2.8.3"
   }
 }
