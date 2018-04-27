@@ -26,6 +26,8 @@ export function setTypeTag(tag?: string) {
 	typeTag = tag;
 }
 
+function dummyGetter() {}
+
 function BaseClass() {}
 
 /** Force TypeScript to accept an MST model as a superclass.
@@ -139,12 +141,25 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 		}
 
 		for(let { name, value } of descList) {
-			const { get, set } = value;
+			const desc: PropertyDescriptor = {};
 
-			if(get) value.get = () => get.call(self);
-			if(set) value.set = (value: any) => set.call(self, value);
+			for(let key of Object.getOwnPropertyNames(value)) {
+				(desc as any)[key] = (value as any)[key];
+			}
 
-			Object.defineProperty(result, name, value);
+			const { get, set } = desc;
+
+			if(get) {
+				desc.get = () => get.call(self);
+			} else if(set) {
+				// Properties with only setters still need a getter defined here,
+				// or mobx-state-tree will ignore them.
+				desc.get = dummyGetter;
+                        }
+
+			if(set) desc.set = (value: any) => set.call(self, value);
+
+			Object.defineProperty(result, name, desc);
 		}
 
 		return(result);
