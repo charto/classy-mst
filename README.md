@@ -296,16 +296,16 @@ The `children` property should be declared in your class as
 
 ```TypeScript
 import { IObservableArray } from 'mobx';
-import { types, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
+import { types, isStateTreeNode, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
 import { mst, mstWithChildren, shim, action, ModelInterface } from 'classy-mst';
 
 export const NodeData = T.model({ value: 42 });
 export class NodeCode extends shim(NodeData) {
 
 	@action
-	addChild(value = 42) {
+	addChild(child: Node | typeof Node.SnapshotType) {
 		if(!this.children) this.children = Children.create();
-		this.children.push(Node.create());
+		this.children.push(isStateTreeNode(child) ? child : Node.create(child));
 
 		return(this);
 	}
@@ -314,6 +314,7 @@ export class NodeCode extends shim(NodeData) {
 }
 
 const { Model: Node, Children } = mstWithChildren(NodeCode, NodeData, 'Node');
+export type Node = typeof Node.Type;
 ```
 
 If you want to use some other name than `children` for the property, easiest is
