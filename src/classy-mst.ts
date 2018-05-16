@@ -159,6 +159,9 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 
 			if(set) desc.set = (value: any) => set.call(self, value);
 
+			// Allow mobx-state-tree to see the property, or it gets ignored.
+			desc.enumerable = true;
+
 			Object.defineProperty(result, name, desc);
 		}
 
