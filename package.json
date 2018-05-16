@@ -1,6 +1,6 @@
 {
   "name": "classy-mst",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ES6-like syntax for mobx-state-tree",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -32,9 +32,9 @@
     "mobx-state-tree": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^9.6.6",
-    "mobx": "^4.2.0",
-    "mobx-state-tree": "^2.0.4",
+    "@types/node": "^10.1.0",
+    "mobx": "^4.2.1",
+    "mobx-state-tree": "^2.0.5",
     "typescript": "~2.8.3"
   }
 }
