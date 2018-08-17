@@ -74,6 +74,18 @@ const internalMembers: { [name: string]: boolean } = {
 	$parent: true
 };
 
+function renameFunction(func: Function, name: string) {
+	Object.defineProperty(func, 'name', { value: 'dummy', writable: false });
+}
+
+// Test if renaming functions works to avoid errors / useless attempts.
+
+try {
+	renameFunction(dummyGetter, 'dummy');
+} catch(err) {}
+
+const renamableFunctions = (dummyGetter.name == 'dummy');
+
 /** Add methods from an ES6 class into an MST model.
   * @param code Class with methods to add as views (the default)
   *   and actions (if decorated).
@@ -137,9 +149,15 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 		const result: { [name: string]: Function } = {};
 
 		for(let { name, value } of actionList) {
-			result[name] = function() {
+			const method = function() {
 				return(value.apply(self, arguments));
 			}
+
+			if(renamableFunctions) {
+				renameFunction(method, modelName + '.' + name);
+			}
+
+			result[name] = method;
 		}
 
 		return(result);
