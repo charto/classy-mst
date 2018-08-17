@@ -68,12 +68,23 @@ interface ClassyUnion<PROPS extends ModelProperties, OTHERS> extends IModelType<
 	$typeTbl: { [name: string]: IModelType<any, any> };
 }
 
+const internalMembers: { [name: string]: boolean } = {
+	constructor: true,
+	$actions: true,
+	$parent: true
+};
+
 /** Add methods from an ES6 class into an MST model.
   * @param code Class with methods to add as views (the default)
   *   and actions (if decorated).
-  * @param data MST model with properties. */
+  * @param data MST model with properties.
+  * @param modelName Model name for debugging and polymorphic type tags in snapshots. */
 
-export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => TYPE, Data: IModelType<PROPS, OTHERS>, name?: string): IModelType<PROPS, TYPE> {
+export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
+	Code: new() => TYPE,
+	Data: IModelType<PROPS, OTHERS>,
+	modelName?: string
+): IModelType<PROPS, TYPE> {
 	const viewList: MemberSpec<Function>[] = [];
 	const actionList: MemberSpec<Function>[] = [];
 	const descList: MemberSpec<PropertyDescriptor>[] = [];
@@ -85,7 +96,7 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => 
 	// Extract views, actions, getters and setters from the class prototype.
 
 	for(let name of Object.getOwnPropertyNames(memberTbl)) {
-		if(name == 'constructor' || name == '$actions' || name == '$parent') continue;
+		if(internalMembers[name]) continue;
 
 		const desc = Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(memberTbl, name);
 
@@ -112,7 +123,7 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => 
 
 	// Apply optional name given to the model.
 
-	if(name) Data = Data.named(name);
+	if(modelName) Data = Data.named(modelName);
 
 	// Bind views, actions and volatile state to the model.
 
@@ -120,7 +131,7 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => 
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
 	).postProcessSnapshot((snap: any) => {
-		if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
+		if(modelName && typeTag && Code.prototype.$parent) snap[typeTag] = modelName;
 		return(snap);
 	}).actions((self) => {
 		const result: { [name: string]: Function } = {};
@@ -173,10 +184,14 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => 
 
 	Model = !volatileList.length ? Model : Model.volatile((self) => volatileTbl);
 
-	return(polymorphic(Code, Model, name));
+	return(polymorphic(Code, Model, modelName));
 }
 
-export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => TYPE, Model: IModelType<PROPS, OTHERS>, name?: string): IModelType<PROPS, TYPE> {
+export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(
+	Code: new() => TYPE,
+	Model: IModelType<PROPS, OTHERS>,
+	modelName?: string
+): IModelType<PROPS, TYPE> {
 	// Union of this class and all of its subclasses.
 	// Late evaluation allows subclasses to add themselves to the type list
 	// before any instances are created.
@@ -219,7 +234,7 @@ export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(Code: n
 		const typeTbl = Class.$typeTbl;
 
 		if(typeList) typeList.push(Model);
-		if(typeTbl && name) typeTbl[name] = Model;
+		if(typeTbl && modelName) typeTbl[modelName] = Model;
 	}
 
 	return(Union);
