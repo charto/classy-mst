@@ -4,10 +4,8 @@ classy-mst
 [![build status](https://travis-ci.org/charto/classy-mst.svg?branch=master)](http://travis-ci.org/charto/classy-mst)
 [![npm version](https://img.shields.io/npm/v/classy-mst.svg)](https://www.npmjs.com/package/classy-mst)
 
-`classy-mst` is the ultimate state management solution for TypeScript and
-JavaScript apps: a zero performance penalty wrapper around the amazing
-[mobx-state-tree](https://github.com/mobxjs/mobx-state-tree) and allowing
-standard ES6 syntax.
+`classy-mst` is the ultimate state management solution for TypeScript and JavaScript apps: a light wrapper around the amazing
+[mobx-state-tree](https://github.com/mobxjs/mobx-state-tree) to allow standard ES6 syntax.
 
 ES6 class methods become "views" or "actions" (when decorated with `@action`
 to indicate they have side effects). Then:
@@ -24,6 +22,9 @@ state management, `classy-mst` adds the benefits of standard ES6 syntax:
 - Less boilerplate.
 - `this`, `super` and inheritance work as you would expect.
 - No lock-in, easier to switch to other technology if needed.
+
+**Note**: old versions 1.x work with mobx-state-tree 2.x.
+Now the major versions are kept in sync.
 
 Contents
 ========
@@ -225,6 +226,9 @@ class VolatileCode extends shim(VolatileData) {
 
 }
 ```
+
+Note that the member must be initialized, or it gets compiled away and `classy-mst`
+never sees it.
 
 Asynchronous actions
 --------------------

@@ -1,6 +1,6 @@
 import { IObservableArray } from 'mobx';
-import { types, flow, onSnapshot, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
-import { mst, shim, action, setTypeTag, ModelInterface } from '..';
+import { types, isStateTreeNode, flow, onSnapshot, IModelType, IComplexType } from 'mobx-state-tree';
+import { mst, mstWithChildren, shim, action, setTypeTag, ModelInterface } from '..';
 
 const TodoData = types.model({
 	title: types.string,
@@ -133,6 +133,14 @@ export const NodeData = types.model({
 
 export class NodeCode extends shim(NodeData) {
 
+	@action
+	addChild(child: Node | typeof Node.SnapshotType) {
+		const children = this.children || (this.children = Children.create());
+		children.push(isStateTreeNode(child) ? child : Node.create(child));
+
+		return(this);
+	}
+
 	// Example method. Note how all members are available and fully typed,
 	// even if recursively defined.
 
@@ -144,39 +152,11 @@ export class NodeCode extends shim(NodeData) {
 	}
 
 	// Recursive members go here first.
-	children?: Node[];
+	children?: (this | NodeCode)[];
 
 }
 
-export const NodeBase = mst(NodeCode, NodeData);
-export type NodeBase = typeof NodeBase.Type;
-
-// Interface trickery to avoid compiler errors when defining a recursive type.
-export interface NodeObservableArray extends IObservableArray<NodeRecursive> {}
-
-export interface NodeRecursive extends NodeBase {
-
-	// Recursive members go here second.
-	children: NodeObservableArray
-
-}
-
-export type NodeArray = IComplexType<
-	(typeof NodeBase.SnapshotType & {
-
-		// Recursive members go here third.
-		children: any[]
-
-	})[],
-	NodeObservableArray
->;
-
-export const Node = NodeBase.props({
-
-	// Recursive members go here fourth.
-	children: types.maybe(types.array(types.late((): any => Node)) as NodeArray),
-
-});
+export const { Model: Node, Children } = mstWithChildren(NodeCode, NodeData, 'Todo');
 
 export type Node = typeof Node.Type;
 

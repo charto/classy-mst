@@ -2,22 +2,24 @@
 // Released under the MIT license, see LICENSE.
 
 import { IObservableArray } from 'mobx';
-import { IType, IModelType, IComplexType, IStateTreeNode, ISnapshottable, types } from 'mobx-state-tree';
-
-/** Fake complete, generic implementation of IModelType. */
-
-export declare const AbstractModel: new() => IStateTreeNode & IModelType<any, any>;
-
-/** Fake complete, specialized implementation of IModelType.
-  * This allows interfaces to include all of its static and dynamic members. */
-
-export declare abstract class ModelClass<S, T> extends AbstractModel implements IStateTreeNode, IModelType<S, T> {}
+import {
+	IType,
+	IModelType,
+	IComplexType,
+	IArrayType,
+	IStateTreeNode,
+	types,
+	TypeFlags,
+	ModelProperties,
+	ModelCreationType,
+	ModelSnapshotType
+} from 'mobx-state-tree';
 
 /** Interface with all IModelType static and dynamic members,
   * callable to construct a specialized instance. */
 
-export interface ModelInterface<S, T> {
-	new(): ModelClass<S, T> & T;
+export interface ModelInterface<PROPS extends ModelProperties, OTHERS, TYPE> {
+	new(): IStateTreeNode & IModelType<PROPS, OTHERS> & TYPE;
 }
 
 export let typeTag: string | undefined = '$';
@@ -33,7 +35,10 @@ function BaseClass() {}
 /** Force TypeScript to accept an MST model as a superclass.
   * @param model Model (MST tree node) */
 
-export function shim<S, T>(Model: IModelType<S, T>, Parent?: any): ModelInterface<S, T> {
+export function shim<PROPS extends ModelProperties, OTHERS, CREATE, SNAP, TYPE>(
+	Model: IModelType<PROPS, OTHERS, CREATE, SNAP, TYPE>,
+	Parent?: any
+): ModelInterface<PROPS, OTHERS, TYPE> {
 	if(Parent && Parent.$proto) {
 		BaseClass.prototype = Parent.$proto;
 		BaseClass.prototype = new (BaseClass as any)();
@@ -57,9 +62,9 @@ interface MemberSpec<MemberType> {
 	value: MemberType;
 }
 
-interface ClassyUnion extends IModelType<any, any> {
+interface ClassyUnion<PROPS extends ModelProperties, OTHERS> extends IModelType<PROPS, OTHERS> {
 	$proto: any;
-	$typeList: (IModelType<any, any> | ((snap: any) => IModelType<any, any>))[];
+	$typeList: (IModelType<any, any> | { dispatcher: ((snap: any) => IModelType<any, any>) })[];
 	$typeTbl: { [name: string]: IModelType<any, any> };
 }
 
@@ -68,7 +73,7 @@ interface ClassyUnion extends IModelType<any, any> {
   *   and actions (if decorated).
   * @param data MST model with properties. */
 
-export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: string): IModelType<S, U> {
+export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => TYPE, Data: IModelType<PROPS, OTHERS>, name?: string): IModelType<PROPS, TYPE> {
 	const viewList: MemberSpec<Function>[] = [];
 	const actionList: MemberSpec<Function>[] = [];
 	const descList: MemberSpec<PropertyDescriptor>[] = [];
@@ -114,13 +119,11 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	let Model = Data.preProcessSnapshot(
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
-	).actions((self) => {
-		const result: { [name: string]: Function } = {
-			postProcessSnapshot: (snap: any) => {
-				if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
-				return(snap);
-			}
-		};
+	).postProcessSnapshot((snap: any) => {
+		if(name && typeTag && Code.prototype.$parent) snap[typeTag] = name;
+		return(snap);
+	}).actions((self) => {
+		const result: { [name: string]: Function } = {};
 
 		for(let { name, value } of actionList) {
 			result[name] = function() {
@@ -173,17 +176,17 @@ export function mst<S, T, U>(Code: new() => U, Data: IModelType<S, T>, name?: st
 	return(polymorphic(Code, Model, name));
 }
 
-export function polymorphic<S, T, U>(Code: new() => U, Model: IModelType<S, T>, name?: string): IModelType<S, U> {
+export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(Code: new() => TYPE, Model: IModelType<PROPS, OTHERS>, name?: string): IModelType<PROPS, TYPE> {
 	// Union of this class and all of its subclasses.
 	// Late evaluation allows subclasses to add themselves to the type list
 	// before any instances are created.
-	const Union: ClassyUnion = types.late(() => types.union.apply(types, Union.$typeList)) as any;
+	const Union: ClassyUnion<PROPS, TYPE> = types.late(() => types.union.apply(types, Union.$typeList)) as any;
 
 	// First item in the type list is a dispatcher function
 	// for parsing type tags in snapshots.
-	Union.$typeList = [ (snap: any) =>
+	Union.$typeList = [ { dispatcher: (snap: any) =>
 		(snap && typeTag && snap[typeTag] && Union.$typeTbl[snap[typeTag]]) || Model
-	];
+	} ];
 
 	Union.$typeTbl = {};
 	Union.$proto = Code.prototype;
@@ -222,17 +225,30 @@ export function polymorphic<S, T, U>(Code: new() => U, Model: IModelType<S, T>, 
 	return(Union);
 }
 
-export function mstWithChildren<S, T, U extends T>(
-	Code: new() => U,
-	Data: IModelType<S, T>,
+export type RecursiveCreationType<PROPS> = ModelCreationType<PROPS> & {
+	children?: RecursiveCreationType<PROPS>[] | null
+}
+
+export type RecursiveSnapshotType<PROPS> = ModelSnapshotType<PROPS> & {
+	children?: RecursiveSnapshotType<PROPS>[] | null
+}
+
+export function mstWithChildren<PROPS extends ModelProperties, OTHERS, TYPE>(
+	Code: new() => TYPE,
+	Data: IModelType<PROPS, OTHERS>,
 	name?: string
 ) {
-	const Children = types.array(types.late((): any => Model));
-	const Branch = (Data as any as IModelType<S, U>).props({
+	const Children = types.array(types.late((): any => Model)) as IArrayType<
+		RecursiveCreationType<PROPS>,
+		RecursiveSnapshotType<PROPS>,
+		TYPE
+	>;
+	const Branch = (Data as any as IModelType<PROPS, TYPE>).props({
 		children: types.maybe(
-			Children as IComplexType<
-				(S & { children?: any[] | null })[],
-				IObservableArray<IModelType<{}, {}>>
+			Children as any as IComplexType<
+				RecursiveCreationType<PROPS>[],
+				RecursiveSnapshotType<PROPS>[],
+				IObservableArray<IModelType<PROPS, OTHERS>>
 			>
 		)
 	});
