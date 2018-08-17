@@ -23,7 +23,7 @@ state management, `classy-mst` adds the benefits of standard ES6 syntax:
 - `this`, `super` and inheritance work as you would expect.
 - No lock-in, easier to switch to other technology if needed.
 
-**Note**: old versions 1.x work with mobx-state-tree 2.x.
+**Note**: Old versions 1.x work with mobx-state-tree 2.x.
 Now the major versions are kept in sync.
 
 Contents

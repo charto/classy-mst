@@ -187,7 +187,7 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 				// Properties with only setters still need a getter defined here,
 				// or mobx-state-tree will ignore them.
 				desc.get = dummyGetter;
-                        }
+			}
 
 			if(set) desc.set = (value: any) => set.call(self, value);
 
