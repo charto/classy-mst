@@ -30,8 +30,6 @@ export function setTypeTag(tag?: string) {
 
 function dummyGetter() {}
 
-function BaseClass() {}
-
 /** Force TypeScript to accept an MST model as a superclass.
   * @param model Model (MST tree node) */
 
@@ -39,6 +37,8 @@ export function shim<PROPS extends ModelProperties, OTHERS, CREATE, SNAP, TYPE>(
 	Model: IModelType<PROPS, OTHERS, CREATE, SNAP, TYPE>,
 	Parent?: any
 ): ModelInterface<PROPS, OTHERS, TYPE> {
+	function BaseClass() {}
+
 	if(Parent && Parent.$proto) {
 		BaseClass.prototype = Parent.$proto;
 		BaseClass.prototype = new (BaseClass as any)();
