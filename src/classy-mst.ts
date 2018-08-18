@@ -75,7 +75,7 @@ const internalMembers: { [name: string]: boolean } = {
 };
 
 function renameFunction(func: Function, name: string) {
-	Object.defineProperty(func, 'name', { value: 'dummy', writable: false });
+	Object.defineProperty(func, 'name', { value: name, writable: false });
 }
 
 // Test if renaming functions works to avoid errors / useless attempts.
