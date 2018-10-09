@@ -9,7 +9,6 @@ import {
 	IArrayType,
 	IStateTreeNode,
 	types,
-	TypeFlags,
 	ModelProperties,
 	ModelCreationType,
 	ModelSnapshotType
@@ -258,11 +257,11 @@ export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(
 	return(Union);
 }
 
-export type RecursiveCreationType<PROPS> = ModelCreationType<PROPS> & {
+export type RecursiveCreationType<PROPS extends ModelProperties> = ModelCreationType<PROPS> & {
 	children?: RecursiveCreationType<PROPS>[] | null
 }
 
-export type RecursiveSnapshotType<PROPS> = ModelSnapshotType<PROPS> & {
+export type RecursiveSnapshotType<PROPS extends ModelProperties> = ModelSnapshotType<PROPS> & {
 	children?: RecursiveSnapshotType<PROPS>[] | null
 }
 
