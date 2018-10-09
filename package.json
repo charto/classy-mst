@@ -2,11 +2,14 @@
   "name": "classy-mst",
   "version": "3.5.0",
   "description": "ES6-like syntax for mobx-state-tree",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "browser": "dist/umd/index.js",
+  "typings": "dist/esm/index.d.ts",
   "scripts": {
     "tsc": "tsc",
-    "prepublish": "tsc -p src && tsc -p src/ts-amd.json && node src/fix-amd.js classy-mst",
+    "rollup": "rollup",
+    "prepublish": "tsc -m es6 --outdir dist/esm -p src && rollup -c",
     "test": "tsc -p test && node test/test.js"
   },
   "author": "Juha Järvi",
@@ -34,6 +37,7 @@
     "@types/node": "^10.11.5",
     "mobx": "^4.5.0",
     "mobx-state-tree": "^3.5.0",
+    "rollup": "^0.66.5",
     "typescript": "^3.1.1"
   }
 }
