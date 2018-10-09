@@ -137,6 +137,14 @@ If adding new properties to the superclass, it's important to pass the
 unmodified superclass as the second parameter to `shim` so that
 `super` is initialized correctly.
 
+Inheritance support combined with hot reload or late types can cause strange
+errors such as stack overflow. To fix them, a class can be sealed to disable
+inheritance entirely:
+
+```TypeScript
+const Todo = mst(TodoCode, TodoData, 'Todo', { sealed: true });
+```
+
 Polymorphism
 ------------
 
