@@ -73,6 +73,11 @@ const internalMembers: { [name: string]: boolean } = {
 	$parent: true
 };
 
+export interface ClassyOptions {
+	name?: string;
+	sealed?: boolean;
+}
+
 function renameFunction(func: Function, name: string) {
 	Object.defineProperty(func, 'name', { value: name, writable: false });
 }
@@ -94,7 +99,8 @@ const renamableFunctions = (dummyGetter.name == 'dummy');
 export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 	Code: new() => TYPE,
 	Data: IModelType<PROPS, OTHERS>,
-	modelName?: string
+	modelName?: string | ClassyOptions,
+	options?: ClassyOptions
 ): IModelType<PROPS, TYPE> {
 	const viewList: MemberSpec<Function>[] = [];
 	const actionList: MemberSpec<Function>[] = [];
@@ -103,6 +109,11 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 	const memberTbl = Code.prototype;
 	const actionTbl = memberTbl.$actions;
 	const volatileTbl: { [name: string]: any } = {};
+
+	if(modelName && typeof(modelName) == 'object') {
+		options = modelName;
+		modelName = options.name;
+	} else options = options || {};
 
 	// Extract views, actions, getters and setters from the class prototype.
 
@@ -138,10 +149,14 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 
 	// Bind views, actions and volatile state to the model.
 
-	let Model = Data.preProcessSnapshot(
+	let Model = Data;
+
+	Model = options.sealed ? Model : Model.preProcessSnapshot(
 		// Instantiating a union of models requires a snapshot.
 		(snap: any) => snap || {}
-	).postProcessSnapshot((snap: any) => {
+	);
+
+	Model = Model.postProcessSnapshot((snap: any) => {
 		if(modelName && typeTag && Code.prototype.$parent) snap[typeTag] = modelName;
 		return(snap);
 	}).actions((self) => {
@@ -201,7 +216,7 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 
 	Model = !volatileList.length ? Model : Model.volatile((self) => volatileTbl);
 
-	return(polymorphic(Code, Model, modelName));
+	return(options.sealed ? Model as any : polymorphic(Code, Model, modelName));
 }
 
 export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(
