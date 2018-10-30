@@ -340,4 +340,4 @@ License
 
 [The MIT License](https://raw.githubusercontent.com/charto/classy-mst/master/LICENSE)
 
-Copyright (c) 2017-2018 BusFaster Ltd
+Copyright (c) 2017- BusFaster Ltd
