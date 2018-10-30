@@ -10,6 +10,7 @@ import {
 	IStateTreeNode,
 	types,
 	ModelProperties,
+	ModelInstanceType,
 	ModelCreationType,
 	ModelSnapshotType
 } from 'mobx-state-tree';
@@ -17,8 +18,8 @@ import {
 /** Interface with all IModelType static and dynamic members,
   * callable to construct a specialized instance. */
 
-export interface ModelInterface<PROPS extends ModelProperties, OTHERS, TYPE> {
-	new(): IStateTreeNode & IModelType<PROPS, OTHERS> & TYPE;
+export interface ModelInterface<PROPS extends ModelProperties, OTHERS, CustomC, CustomS> {
+	new(): IStateTreeNode & IModelType<PROPS, OTHERS, CustomC, CustomS> & ModelInstanceType<PROPS, OTHERS, CustomC, CustomS>;
 }
 
 export let typeTag: string | undefined = '$';
@@ -32,10 +33,10 @@ function dummyGetter() {}
 /** Force TypeScript to accept an MST model as a superclass.
   * @param model Model (MST tree node) */
 
-export function shim<PROPS extends ModelProperties, OTHERS, CREATE, SNAP, TYPE>(
-	Model: IModelType<PROPS, OTHERS, CREATE, SNAP, TYPE>,
+export function shim<PROPS extends ModelProperties, OTHERS, CustomC, CustomS>(
+	Model: IModelType<PROPS, OTHERS, CustomC, CustomS>,
 	Parent?: any
-): ModelInterface<PROPS, OTHERS, TYPE> {
+): ModelInterface<PROPS, OTHERS, CustomC, CustomS> {
 	function BaseClass() {}
 
 	if(Parent && Parent.$proto) {
@@ -285,11 +286,11 @@ export function mstWithChildren<PROPS extends ModelProperties, OTHERS, TYPE>(
 	Data: IModelType<PROPS, OTHERS>,
 	name?: string
 ) {
-	const Children = types.array(types.late((): any => Model)) as IArrayType<
+	const Children = types.array(types.late((): any => Model)) as IArrayType<IType<
 		RecursiveCreationType<PROPS>,
 		RecursiveSnapshotType<PROPS>,
 		TYPE
-	>;
+	>>;
 	const Branch = (Data as any as IModelType<PROPS, TYPE>).props({
 		children: types.maybe(
 			Children as any as IComplexType<
