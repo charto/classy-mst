@@ -5,7 +5,6 @@ import { IObservableArray } from 'mobx';
 import {
 	IType,
 	IModelType,
-	IComplexType,
 	IArrayType,
 	IStateTreeNode,
 	types,
@@ -293,7 +292,7 @@ export function mstWithChildren<PROPS extends ModelProperties, OTHERS, TYPE>(
 	>>;
 	const Branch = (Data as any as IModelType<PROPS, TYPE>).props({
 		children: types.maybe(
-			Children as any as IComplexType<
+			Children as any as IType<
 				RecursiveCreationType<PROPS>[],
 				RecursiveSnapshotType<PROPS>[],
 				IObservableArray<IModelType<PROPS, OTHERS>>

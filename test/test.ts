@@ -1,5 +1,5 @@
 import { IObservableArray } from 'mobx';
-import { types, isStateTreeNode, flow, onSnapshot, IModelType, IComplexType } from 'mobx-state-tree';
+import { types, isStateTreeNode, flow, onSnapshot, IModelType } from 'mobx-state-tree';
 import { mst, mstWithChildren, shim, action, setTypeTag, ModelInterface } from '..';
 
 const TodoData = types.model({
