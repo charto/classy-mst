@@ -62,10 +62,10 @@ interface MemberSpec<MemberType> {
 	value: MemberType;
 }
 
-interface ClassyUnion<PROPS extends ModelProperties, OTHERS> extends IModelType<PROPS, OTHERS> {
+interface ClassyUnion<PROPS extends ModelProperties, OTHERS, CustomC, CustomS> extends IModelType<PROPS, OTHERS, CustomC, CustomS> {
 	$proto: any;
-	$typeList: (IModelType<any, any> | { dispatcher: ((snap: any) => IModelType<any, any>) })[];
-	$typeTbl: { [name: string]: IModelType<any, any> };
+	$typeList: (IModelType<any, any, any, any> | { dispatcher: ((snap: any) => IModelType<any, any, any, any>) })[];
+	$typeTbl: { [name: string]: IModelType<any, any, any, any> };
 }
 
 const internalMembers: { [name: string]: boolean } = {
@@ -97,12 +97,12 @@ const renamableFunctions = (dummyGetter.name == 'dummy');
   * @param data MST model with properties.
   * @param modelName Model name for debugging and polymorphic type tags in snapshots. */
 
-export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
+export function mst<PROPS extends ModelProperties, OTHERS, CustomC, CustomS, TYPE>(
 	Code: new() => TYPE,
-	Data: IModelType<PROPS, OTHERS>,
+	Data: IModelType<PROPS, OTHERS, CustomC, CustomS>,
 	modelName?: string | ClassyOptions,
 	options?: ClassyOptions
-): IModelType<PROPS, TYPE> {
+): IModelType<PROPS, TYPE, CustomC, CustomS> {
 	const viewList: MemberSpec<Function>[] = [];
 	const actionList: MemberSpec<Function>[] = [];
 	const descList: MemberSpec<PropertyDescriptor>[] = [];
@@ -220,15 +220,15 @@ export function mst<PROPS extends ModelProperties, OTHERS, TYPE>(
 	return(options.sealed ? Model as any : polymorphic(Code, Model, modelName));
 }
 
-export function polymorphic<PROPS extends ModelProperties, OTHERS, TYPE>(
+export function polymorphic<PROPS extends ModelProperties, OTHERS, CustomC, CustomS, TYPE>(
 	Code: new() => TYPE,
-	Model: IModelType<PROPS, OTHERS>,
+	Model: IModelType<PROPS, OTHERS, CustomC, CustomS>,
 	modelName?: string
-): IModelType<PROPS, TYPE> {
+): IModelType<PROPS, TYPE, CustomC, CustomS> {
 	// Union of this class and all of its subclasses.
 	// Late evaluation allows subclasses to add themselves to the type list
 	// before any instances are created.
-	const Union: ClassyUnion<PROPS, TYPE> = types.late(() => types.union.apply(types, Union.$typeList)) as any;
+	const Union: ClassyUnion<PROPS, TYPE, CustomC, CustomS> = types.late(() => types.union.apply(types, Union.$typeList)) as any;
 
 	// First item in the type list is a dispatcher function
 	// for parsing type tags in snapshots.
