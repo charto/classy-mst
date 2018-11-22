@@ -308,7 +308,7 @@ The `children` property should be declared in your class as
 
 ```TypeScript
 import { IObservableArray } from 'mobx';
-import { types, isStateTreeNode, ISnapshottable, IModelType, IComplexType } from 'mobx-state-tree';
+import { types, isStateTreeNode, IModelType } from 'mobx-state-tree';
 import { mst, mstWithChildren, shim, action, ModelInterface } from 'classy-mst';
 
 export const NodeData = T.model({ value: 42 });
