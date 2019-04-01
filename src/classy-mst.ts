@@ -18,7 +18,7 @@ import {
   * callable to construct a specialized instance. */
 
 export interface ModelInterface<PROPS extends ModelProperties, OTHERS, CustomC, CustomS> {
-	new(): IStateTreeNode & IModelType<PROPS, OTHERS, CustomC, CustomS> & ModelInstanceType<PROPS, OTHERS, CustomC, CustomS>;
+	new(): IStateTreeNode & IModelType<PROPS, OTHERS, CustomC, CustomS> & ModelInstanceType<PROPS, OTHERS>;
 }
 
 export let typeTag: string | undefined = '$';
