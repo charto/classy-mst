@@ -3,6 +3,9 @@ classy-mst
 
 [![build status](https://travis-ci.org/charto/classy-mst.svg?branch=master)](http://travis-ci.org/charto/classy-mst)
 [![npm version](https://img.shields.io/npm/v/classy-mst.svg)](https://www.npmjs.com/package/classy-mst)
+[![dependency status](https://david-dm.org/charto/classy-mst.svg)](https://david-dm.org/charto/classy-mst)
+[![install size](https://img.shields.io/bundlephobia/min/classy-mst.svg)](https://bundlephobia.com/result?p=classy-mst)
+[![license](https://img.shields.io/npm/l/classy-mst.svg)](https://raw.githubusercontent.com/charto/classy-mst/master/LICENSE)
 
 `classy-mst` is the ultimate state management solution for TypeScript and JavaScript apps: a light wrapper around the amazing
 [mobx-state-tree](https://github.com/mobxjs/mobx-state-tree) to allow standard ES6 syntax.

@@ -10,8 +10,8 @@ import {
 	types,
 	ModelProperties,
 	ModelInstanceType,
-	ModelCreationType,
-	ModelSnapshotType
+	ModelCreationType2,
+	ModelSnapshotType2
 } from 'mobx-state-tree';
 
 /** Interface with all IModelType static and dynamic members,
@@ -272,31 +272,24 @@ export function polymorphic<PROPS extends ModelProperties, OTHERS, CustomC, Cust
 	return(Union);
 }
 
-export type RecursiveCreationType<PROPS extends ModelProperties> = ModelCreationType<PROPS> & {
-	children?: RecursiveCreationType<PROPS>[] | null
+export type RecursiveType<PROPS> = PROPS & {
+	children?: RecursiveType<PROPS>[] | null
 }
 
-export type RecursiveSnapshotType<PROPS extends ModelProperties> = ModelSnapshotType<PROPS> & {
-	children?: RecursiveSnapshotType<PROPS>[] | null
-}
-
-export function mstWithChildren<PROPS extends ModelProperties, OTHERS, TYPE>(
+export function mstWithChildren<PROPS extends ModelProperties, OTHERS, CustomC, CustomS, TYPE>(
 	Code: new() => TYPE,
-	Data: IModelType<PROPS, OTHERS>,
+	Data: IModelType<PROPS, OTHERS, CustomC, CustomS>,
 	name?: string
 ) {
-	const Children = types.array(types.late((): any => Model)) as IArrayType<IType<
-		RecursiveCreationType<PROPS>,
-		RecursiveSnapshotType<PROPS>,
-		TYPE
-	>>;
-	const Branch = (Data as any as IModelType<PROPS, TYPE>).props({
+	const Children = types.array(types.late((): any => Model));
+	const Branch = (Data as any as IModelType<PROPS, TYPE, CustomC, CustomS>).props({
 		children: types.maybe(
-			Children as any as IType<
-				RecursiveCreationType<PROPS>[],
-				RecursiveSnapshotType<PROPS>[],
-				IObservableArray<IModelType<PROPS, OTHERS>>
-			>
+			Children as any as IArrayType<IModelType<
+				RecursiveType<PROPS>,
+				OTHERS,
+				RecursiveType<ModelCreationType2<PROPS, CustomC>>,
+				RecursiveType<ModelSnapshotType2<PROPS, CustomS>>
+			>>
 		)
 	});
 
