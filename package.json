@@ -9,7 +9,7 @@
   "scripts": {
     "tsc": "tsc",
     "rollup": "rollup",
-    "prepublish": "(node src/checkver.js ge 5.0.0 && tsc -m es6 --outdir dist/esm -p src && rollup -c) || tsc -p src",
+    "prepublish": "tsc -p src && (node src/checkver.js lt 5.0.0 || (tsc -p src -m es6 --outdir dist/esm && rollup -c))",
     "test": "tsc -p test && node test/test.js"
   },
   "author": "Juha Järvi",
