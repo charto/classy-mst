@@ -239,29 +239,27 @@ function and return its result, like this:
 
 ```TypeScript
 import { types, flow } from 'mobx-state-tree';
-import { mst, shim, action } from 'classy-mst';
+import { mst, shim, asyncAction } from 'classy-mst';
 
-const AsyncData = types.model({});
+const AsyncData = types.model({ text: '' });
 
 class AsyncCode extends shim(AsyncData) {
 
-	@action
-	run() {
-		function* generate() {
-			yield Promise.resolve('This gets lost');
-			return('Returned value');
-		}
-
-		return(flow(generate)());
+	@asyncAction
+	*run() {
+		const data = yield Promise.resolve('Fetched value');
+		this.text = data;
+		return data;
 	}
-
 }
 
 const Async = mst(AsyncCode, AsyncData);
 
-Async.create().run().then(
-	(result) => console.log(result)
-);
+const run = async() => {
+	const result = await Async.create().run();
+	console.log(result);
+};
+run();
 ```
 
 Recursive types

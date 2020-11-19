@@ -5,6 +5,7 @@ export {
     mst,
     shim,
     action,
+    asyncAction,
     polymorphic,
     setTypeTag,
     mstWithChildren,

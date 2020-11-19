@@ -11,7 +11,8 @@ import {
 	types,
 	ModelProperties,
 	ModelCreationType,
-	ModelSnapshotType
+	ModelSnapshotType,
+	flow,
 } from 'mobx-state-tree';
 
 /** Interface with all IModelType static and dynamic members,
@@ -54,6 +55,15 @@ export function shim<PROPS extends ModelProperties, OTHERS, CREATE, SNAP, TYPE>(
 
 export function action(target: { [key: string]: any }, key: string) {
 	(target.$actions || (target.$actions = {}))[key] = true;
+}
+
+export function asyncAction(target: { [key: string]: any }, key: string, descriptor: PropertyDescriptor) {
+	(target.$actions || (target.$actions = {}))[key] = true;
+	const originalMethod = descriptor.value;
+	descriptor.value = function(...args: any) {
+		return flow(originalMethod.bind(this, args))();
+	};
+	return descriptor;
 }
 
 interface MemberSpec<MemberType> {
