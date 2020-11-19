@@ -1,6 +1,6 @@
 import { IObservableArray } from 'mobx';
 import { types, isStateTreeNode, flow, onSnapshot, IModelType, IComplexType } from 'mobx-state-tree';
-import { mst, mstWithChildren, shim, action, setTypeTag, ModelInterface } from '..';
+import { mst, mstWithChildren, shim, action, setTypeTag, ModelInterface, asyncAction } from '..';
 
 const TodoData = types.model({
 	title: types.string,
@@ -102,27 +102,26 @@ const Volatile = mst(VolatileCode, VolatileData);
 // Prints: 3
 console.log(Volatile.create().test());
 
-const AsyncData = types.model({});
+const AsyncData = types.model({ text: '' });
 
 class AsyncCode extends shim(AsyncData) {
 
-	@action
-	run() {
-		function* generate() {
-			yield Promise.resolve('This gets lost');
-			return('Returned value');
-		}
-
-		return(flow(generate)());
+	@asyncAction
+	*run() {
+		const data = yield Promise.resolve('Fetched value');
+		this.text = data;
+		return data;
 	}
-
 }
 
 const Async = mst(AsyncCode, AsyncData);
 
-Async.create().run().then(
-	(result) => console.log(result)
-);
+const run = async() => {
+	const result = await Async.create().run();
+	console.log(result);
+};
+run();
+
 
 export const NodeData = types.model({
 
